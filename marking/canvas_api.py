@@ -40,7 +40,6 @@ class CanvasAPI():
 
         return responses
 
-
     def get(self, api, to_json=True):
 
         responses = self.get_responses(api)
@@ -48,7 +47,6 @@ class CanvasAPI():
             responses = [r.json() for r in responses]
 
         return reduce(lambda x, y: itertools.chain(x, y), responses)
-
 
     def get_courses(self):
         return self.get('/courses')

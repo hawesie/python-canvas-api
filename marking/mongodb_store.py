@@ -31,6 +31,11 @@ class SubmissionStore():
 
         pass
 
+
+    def get_submissions_to_mark(self, course_id, assignment_id):
+        query = {'$or': [{'grade_matches_current_submission': False}, {'grade': None}]}
+        return self.get_assignment_submissions(course_id, assignment_id, query)
+
     def get_assignment_submissions(self, course_id, assignment_id, query={}):
         """
         Retrieves submissions for the given course and assignment from the database. Additionally restricts assignments based on query.
@@ -42,5 +47,6 @@ class SubmissionStore():
         """
         course_id = str(course_id)
         assignment_id = str(assignment_id)
+
         return self.client[course_id][assignment_id].find(query)
 
