@@ -2,8 +2,11 @@
 import urllib
 import requests
 import os 
+import pymongo
 
 access_token="1848~N3mmmxpnXbEchYrRMhHBSVzLY6spgJteMxBhumiOHcMqb2R9CrJoyvB1v9FC0ITt"
+
+client = pymongo.MongoClient()
 
 def get(api, access_token, base_url='https://canvas.bham.ac.uk', api_prefix='/api/v1'):
 
@@ -41,8 +44,7 @@ def get_quiz_submissions(access_token, course_id, quiz_id):
 
 	return submissions
 
-
-def get_assignment_submissions(access_token, course_id, assignment_id, save_files=True, save_prefix='/tmp'):
+def get_assignment_submissions_old(access_token, course_id, assignment_id, save_files=True, save_prefix='/tmp'):
 
 	file_saver = urllib.URLopener()
 	
@@ -75,21 +77,44 @@ def get_assignment_submissions(access_token, course_id, assignment_id, save_file
 		
 	return submission_returns
 
+def get_assignment_submissions(access_token, course_id, assignment_id):
+	
+	submissions = get('/courses/%s/assignments/%s/submissions' % (course_id, assignment_id), access_token).json()
+
+	submissions_collection = client[course_id][assignment_id]
+	submissions_collection.insert(submissions)
+
+	# for submission in submissions:
+
+	# 	submission_returns[submission['user_id']] = {}		
+
+	# 	for attachment in submission['attachments']:
+	# 		files = []
+	# 		r = requests.get(attachment['url'], params={'access_token': access_token})
+	# 		save_to = os.path.join(assignment_path, attachment['filename'])
+	# 		with open(save_to, 'w') as f:
+	# 			f.write(r.text)
+	# 			files.append(save_to)
+
+	# 	submission_returns[submission['user_id']]['files'] = files
+		
+	# return submission_returns
+
 if __name__ == "__main__":
 	# get_courses(access_token)
 	test_module_id = '5769'
 	# get_assignments(access_token, test_module_id)
 	test_assignment_id = '26353'
-	# print get_assignment_submissions(access_token, test_module_id, test_assignment_id)
+	get_assignment_submissions(access_token, test_module_id, test_assignment_id)
 
 
 	# submission['posted_grade'] = 3
 
-	payload = {'access_token': access_token}	
-	payload['submission[posted_grade]']=3	
+	# payload = {'access_token': access_token}	
+	# payload['submission[posted_grade]']=3	
 
-	r = requests.put("https://canvas.bham.ac.uk/api/v1/courses/5769/assignments/26353/submissions/5005", params=payload)
-	print r.json()
+	# r = requests.put("https://canvas.bham.ac.uk/api/v1/courses/5769/assignments/26353/submissions/5005", params=payload)
+	# print r.json()
 
 	# todo
 	# to get the contents of a quiz you need to generate a report then download the csv report file
