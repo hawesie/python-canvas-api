@@ -1,29 +1,13 @@
 __author__ = 'nah'
 
-from marking import canvas_api, mongodb_store
+from marking import canvas_api, mongodb_store, print_submissions
 
 
-def print_courses(courses):
-    print('Courses:')
-    for course in courses:
-        print('%s: %s' % (course['id'], course['name']))
 
 
-def print_assignments(assignments):
-    print('Assignments:')
-    for assignment in assignments:
-        if 'online_quiz' in assignment['submission_types']:
-            print('%s: %s (%s, quiz_id: %s)' % (
-                assignment['id'], assignment['name'], assignment['submission_types'], assignment['quiz_id']))
-        else:
-            print('%s: %s (%s)' % (assignment['id'], assignment['name'], assignment['submission_types']))
+# def mark(submission):
+# need to specialise to different marking workflows
 
-
-def print_submissions(submissions):
-    print('Submissions:')
-    for submission in submissions:
-        print('%s: %s - %s' % (submission['user_id'], submission['submitted_at'], submission['workflow_state']))
-        # print(submission)
 
 
 if __name__ == "__main__":
@@ -33,15 +17,26 @@ if __name__ == "__main__":
     # courses = capi.get_courses()
     # print_courses(courses)
 
-    course_id = 5769
+    # course_id = 5769
+    sww1 = 10065
 
-    # assignments = capi.get_assignments(course_id)
+    # assignments = capi.get_assignments(sww1)
     # print_assignments(assignments)
+    #
+    # assignment_id = 26353
 
-    assignment_id = 26353
+    git_assignment = 26165
 
-    submissions = capi.get_assignment_submissions(course_id, assignment_id)
+    submissions = capi.get_assignment_submissions(sww1, git_assignment)
+
+
+    # store.store_assignment_submissions(course_id, assignment_id, submissions)
+    # stored_submissions = store.get_assignment_submissions(course_id, assignment_id)
     print_submissions(submissions)
-    store.store_assignment_submissions(course_id, assignment_id, submissions)
-    stored_submissions = store.get_assignment_submissions(course_id, assignment_id)
-    print_submissions(submissions)
+    # print capi.get_submission_attachments(submissions[0])
+
+    # with futures.ThreadPoolExecutor(max_workers=5) as executor:
+    # fs = [executor.submit(mark, submission) for submission in submissions]
+    #
+    #     for future in futures.as_completed(fs):
+    #         print future.result()

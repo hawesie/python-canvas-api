@@ -17,12 +17,19 @@ class SubmissionStore():
 
         :param course_id: The id of the course to store the submissions unders
         :param assignment_id:  The id of the assignment to store the assignments unders
-        :param submissions: The submissions themselves, in JSON format
+        :param submissions: The submissions themselves, in JSON format. Can be a single submission or a collection
         """
         course_id = str(course_id)
         assignment_id = str(assignment_id)
         submissions_collection = self.client[course_id][assignment_id]
         submissions_collection.insert(submissions)
+
+
+    def store_submission_attachments(self, course_id, submission, attachments):
+        course_id = str(course_id)
+        assignment_id = str(submission['assignment_id'])
+
+        pass
 
     def get_assignment_submissions(self, course_id, assignment_id, query={}):
         """
