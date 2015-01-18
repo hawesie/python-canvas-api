@@ -1,7 +1,6 @@
 __author__ = 'nah'
 
-import canvas_api
-import mongodb_store
+from marking import canvas_api, mongodb_store
 
 
 def print_courses(courses):
