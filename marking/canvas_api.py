@@ -48,6 +48,9 @@ class CanvasAPI():
 
         return reduce(lambda x, y: itertools.chain(x, y), responses)
 
+    def get_user(self, user_id):
+        return self.get('/users/%s/profile' % user_id)
+
     def get_courses(self):
         return self.get('/courses')
 

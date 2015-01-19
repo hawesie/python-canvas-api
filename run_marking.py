@@ -2,8 +2,7 @@ __author__ = 'nah'
 
 from concurrent import futures
 
-from marking import canvas_api, mongodb_store, marking_actions
-
+from marking import canvas_api, mongodb_store, marking_actions, marks
 
 def mark(submission, marker_fn):
     marker = marker_fn()
@@ -40,8 +39,21 @@ if __name__ == "__main__":
 
     print('%s submissions to mark' % submissions.count())
 
-    def check_files(file_dict, marks):
-        print file_dict
+    def check_files(submission, file_dict, marks_dict):
+        if len(file_dict) == 0:
+            marks.set_final_mark(marks_dict, 0, 'No files found')
+            return False
+        if len(file_dict) > 1:
+            marks.add_comment(marks_dict,
+                              'More than one file found, but only one should have been submitted. Outcome may be unpredictable.')
+
+        for filename in file_dict:
+            tokens = filename.split('.')
+            if marking_actions.is_username(tokens[0]) and tokens[0].lower() == submission['username'].lower():
+                marks.add_comment(marks_dict, 'Filename %s is correct.' % filename)
+            else:
+                marks.add_component_mark(marks_dict, -0.5, 'Filename %s is not a username' % tokens[0])
+
         return True
 
     new_marker_fun = lambda: marking_actions.FileTokenMarker(capi, store, file_checker_fn=check_files)

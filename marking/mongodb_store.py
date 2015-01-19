@@ -9,7 +9,8 @@ class SubmissionStore():
     def __init__(self, db_host='localhost', db_port=27017):
         """Construct a submission store working with a mongodb server at the given location."""
         self.client = pymongo.MongoClient(db_host, db_port)
-
+        self.users_collection = self.client['users']['users']
+        self.users_collection.ensure_index('user_id')
 
     def _store_single_submission(self, collection, submission):
         # assumption is that there can only be one submission per user in the collection
@@ -45,6 +46,15 @@ class SubmissionStore():
         query = {'$or': [{'grade_matches_current_submission': False}, {'grade': None}]}
         return self.get_assignment_submissions(course_id, assignment_id, query)
 
+    def get_stored_submission(self, course_id, assignment_id, user_id):
+        query = {'user_id': user_id}
+        result = self.get_assignment_submissions(course_id, assignment_id, query)
+        if result.count() > 0:
+            return result[0]
+        else:
+            return None
+
+
     def get_assignment_submissions(self, course_id, assignment_id, query={}):
         """
         Retrieves submissions for the given course and assignment from the database. Additionally restricts assignments based on query.
@@ -59,3 +69,12 @@ class SubmissionStore():
 
         return self.client[course_id][assignment_id].find(query)
 
+    def store_user(self, user):
+        self.users_collection.update({'id': user['id']}, user, upsert=True)
+
+    def get_username(self, uid):
+        user = self.users_collection.find_one({'id': uid})
+        if user is None:
+            return None
+        else:
+            return user['login_id']

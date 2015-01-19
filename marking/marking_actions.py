@@ -11,6 +11,15 @@ class Marker(object):
         self.submission_store = submission_store
 
 
+    def get_username(self, submission):
+        uid = submission['user_id']
+        username = self.submission_store.get_username(uid)
+        if username is None:
+            user = self.canvas_api.get_user(uid)
+            print user
+            username = self.submission_store.store_user(user)
+        return username
+
     def get_attachments(self, submission):
         """
 
@@ -20,6 +29,10 @@ class Marker(object):
         Returns:
             A dictionary mapping filenames to their contents.
         """
+
+        # get the submission from the store
+        self.submission_store.
+
         return self.canvas_api.get_submission_attachments(submission, as_bytes=True)
 
 
@@ -60,11 +73,16 @@ class FileTokenMarker(Marker):
 
 
     def mark(self, submission):
+        # get attachments for sumission
         attachments = self.get_attachments(submission)
+
+        # add username into submission for convenience later
+        submission['username'] = self.get_username(submission)
+
         marks = {}
 
         if self.file_checker_fn is not None:
-            if not self.file_checker_fn(attachments, marks):
+            if not self.file_checker_fn(submission, attachments, marks):
                 return marks
 
         return marks

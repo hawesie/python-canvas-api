@@ -22,3 +22,5 @@ def print_submissions(submissions):
     for submission in submissions:
         print('%s: %s - %s' % (submission['user_id'], submission['submitted_at'], submission['workflow_state']))
         print(submission)
+
+
