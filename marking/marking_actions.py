@@ -1,18 +1,70 @@
 __author__ = 'nah'
+import re
 
 
-class Marker():
+class Marker(object):
     """"""
 
-    def __init__(self):
+    def __init__(self, canvas_api, submission_store):
         """Constructor for Marker"""
-        pass
+        self.canvas_api = canvas_api
+        self.submission_store = submission_store
 
 
-class FilesMarker():
-    """"""
+    def get_attachments(self, submission):
+        """
 
-    def __init__(self, ):
-        """Constructor for FilesMarker"""
-        
-    
+        Args:
+            :param submission: The submission to get the attachments for
+
+        Returns:
+            A dictionary mapping filenames to their contents.
+        """
+        return self.canvas_api.get_submission_attachments(submission, as_bytes=True)
+
+
+    def mark(self, submission):
+        return {}
+
+
+username_pattern = re.compile('[a-z][a-z][a-z][0-9][0-9][0-9]', re.IGNORECASE)
+
+
+def is_username(un):
+    """
+        Returns true if un is the of the form of a student username (6 characters, 3 letters then 3 numbers)
+    :param un:
+    :return:
+    """
+    return un is not None and len(un) == 6 and username_pattern.match(un) is not None
+
+
+def split_and_check(filename, split_on='.'):
+    tokens = filename.split(sep=split_on)
+    print tokens
+    print len(tokens)
+
+
+class FileTokenMarker(Marker):
+    """
+        Marks the submission based on tokens in the attachments, but does not write attachments to disk.
+    """
+
+    def __init__(self, canvas_api, submission_store, file_checker_fn=None, file_tokeniser_fn=None,
+                 token_marker_fn=None):
+        """Constructor for FileTokenMarker"""
+        super(FileTokenMarker, self).__init__(canvas_api, submission_store)
+        self.file_checker_fn = file_checker_fn
+        self.file_tokeniser_fn = file_tokeniser_fn
+        self.token_marker_fn = token_marker_fn
+
+
+    def mark(self, submission):
+        attachments = self.get_attachments(submission)
+        marks = {}
+
+        if self.file_checker_fn is not None:
+            if not self.file_checker_fn(attachments, marks):
+                return marks
+
+        return marks

@@ -2,16 +2,12 @@ __author__ = 'nah'
 
 from concurrent import futures
 
-from marking import canvas_api, mongodb_store
+from marking import canvas_api, mongodb_store, marking_actions
 
 
-def mark(submissions, canvas_api, submission_store):
-    # get the
-    submission = next(submissions)
-    attachments = capi.get_submission_attachments(submission, as_bytes=True)
-
-# todo this is where a class and hierarchy should start, the object should have the submission, api and store and have the specialised subclasses and parts to do the different things
-
+def mark(submission, marker_fn):
+    marker = marker_fn()
+    return marker.mark(submission)
 
 if __name__ == "__main__":
     capi = canvas_api.CanvasAPI("1848~N3mmmxpnXbEchYrRMhHBSVzLY6spgJteMxBhumiOHcMqb2R9CrJoyvB1v9FC0ITt")
@@ -32,24 +28,29 @@ if __name__ == "__main__":
     assignment_id = git_assignment
 
     # get all submissions
-    submissions = capi.get_assignment_submissions(course_id, assignment_id)
+    # submissions = capi.get_assignment_submissions(course_id, assignment_id)
+
+    # print('%s submissions retrieved from Canvas' % len(submissions))
 
     # store them locally for processing -- may not be necessary, but it allows more complex queries to be made
-    store.store_assignment_submissions(course_id, assignment_id, submissions)
+    # store.store_assignment_submissions(course_id, assignment_id, submissions)
 
     # the assignments that still need marking
     submissions = store.get_submissions_to_mark(course_id, assignment_id)
 
+    print('%s submissions to mark' % submissions.count())
 
-    # print_submissions(submissions)
+    def check_files(file_dict, marks):
+        print file_dict
+        return True
 
-    # print capi.get_submission_attachments(submissions[0])
+    new_marker_fun = lambda: marking_actions.FileTokenMarker(capi, store, file_checker_fn=check_files)
 
-    # using iter explicitly to avoid retrieving all submissions from db
-    submission_iter = iter(submissions)
+    n_workers = 1
 
-    with futures.ThreadPoolExecutor(max_workers=5) as executor:
-        fs = [executor.submit(mark, submission_iter, capi, store) for submission in submissions]
+    with futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+
+        fs = [executor.submit(mark, submission, new_marker_fun) for submission in submissions]
 
         for future in futures.as_completed(fs):
             try:

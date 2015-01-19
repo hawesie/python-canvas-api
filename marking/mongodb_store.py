@@ -11,25 +11,34 @@ class SubmissionStore():
         self.client = pymongo.MongoClient(db_host, db_port)
 
 
+    def _store_single_submission(self, collection, submission):
+        # assumption is that there can only be one submission per user in the collection
+        collection.update({'user_id': submission['user_id']}, submission, upsert=True)
+
+
     def store_assignment_submissions(self, course_id, assignment_id, submissions):
         """
         Stores the given submissions in the database.
 
         :param course_id: The id of the course to store the submissions unders
         :param assignment_id:  The id of the assignment to store the assignments unders
-        :param submissions: The submissions themselves, in JSON format. Can be a single submission or a collection
+        :param submissions: The submissions themselves, in JSON format. Can be a single submission or an iterable
         """
         course_id = str(course_id)
         assignment_id = str(assignment_id)
         submissions_collection = self.client[course_id][assignment_id]
-        submissions_collection.insert(submissions)
+
+        try:
+            for submission in submissions:
+                self._store_single_submission(submissions_collection, submission)
+        except TypeError, te:
+            self._store_single_submission(submissions_collection, submissions)
+
 
 
     def store_submission_attachments(self, course_id, submission, attachments):
         course_id = str(course_id)
         assignment_id = str(submission['assignment_id'])
-
-        pass
 
 
     def get_submissions_to_mark(self, course_id, assignment_id):
