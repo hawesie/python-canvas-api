@@ -8,14 +8,13 @@ def clone_repo(git_url, repo_dir):
     return repo
 
 
+def get_last_commit(repo):
+    head = repo.head  # the head points to the active branch/ref
+    master = head.reference  # retrieve the reference the head points to
+    return master.commit
+
 def get_commit_log(repo):
-    # head = repo.head
-    # master = head.reference
-    # log = master.log()
-    # print log
-    # return log
-    for commit in repo.iter_commits('master'):
-        print commit.author.name
-        print commit.author.email
-        print commit.committer
-        print commit.message
+    head = repo.head
+    master = head.reference
+    log = master.log()
+    return log

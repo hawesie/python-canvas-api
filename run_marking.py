@@ -56,6 +56,7 @@ def git_file_marker(submission, attachments, marks_dict):
 
     # part 1
     with file_actions.SubmissionDirectory(submission) as dir:
+        marks.set_part(marks_dict, 'Part 1')
         git_actions.clone_repo(file_tokens[0], dir.path)
         marks.add_component_mark(marks_dict, 1, 'Cloned %s successfully' % file_tokens[0])
         file_actions.make_empty('bin', dir.path)
@@ -94,9 +95,27 @@ def git_file_marker(submission, attachments, marks_dict):
 
     # part 2
     with file_actions.SubmissionDirectory(submission) as dir:
-        repo = git_actions.clone_repo(file_tokens[1], dir.path)
+        marks.set_part(marks_dict, 'Part 2')
+        git_actions.clone_repo(file_tokens[1], dir.path)
         marks.add_component_mark(marks_dict, 0.5, 'Cloned %s successfully' % file_tokens[1])
-        git_actions.get_commit_log(repo)
+
+
+        def get_line_fn(f):
+            # this is a big hack to get around the fact I didn't specify the exercise well enough
+            already = ['nah', 'jxh373', 'jxr227', 'sdb123', 'fxj345']
+            for l in f:
+                tokens = l.split(':')
+                if len(tokens) > 1 and tokens[0] not in already:
+                    return l
+            return None
+
+        def mark_file_fn(f, mark_dict):
+            def line_match_fn(l):
+                l.startswith('%s:' % submission['username'])
+
+            file_actions.match_file_line(f, get_line_fn, line_match_fn, mark_dict, 0.5)
+
+        file_actions.mark_file('edit-me.md', dir.path, marks_dict, 0.5, mark_file_fn)
 
     return marks_dict
 

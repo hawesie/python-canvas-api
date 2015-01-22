@@ -87,3 +87,5 @@ class FileTokenMarker(Marker):
         self.attachments_marker_fn(submission, attachments, marks)
 
         return marks
+
+

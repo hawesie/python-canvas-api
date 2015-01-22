@@ -78,3 +78,37 @@ def mark_process(cmd, cwd, mark_dict, component_mark, success_comment='', failur
                                  'Could not run "%s". Output was "%s". %s' % (cmd, output, failure_comment))
 
     return success
+
+
+def mark_file(file_path, base_path, mark_dict, component_mark, mark_fn):
+    if base_path is not None:
+        file_path = os.path.join(base_path, file_path)
+
+    try:
+        with open(file_path, 'r') as f:
+            mark_fn(f, mark_dict)
+
+    except IOError, e:
+        marks.add_component_mark(mark_dict, 0, 'File "%s" could not be opened for marking.' % file_path)
+
+
+def match_file_line(f, get_line_fn, line_match_fn, mark_dict, component_mark, pattern_str=None):
+    line = get_line_fn(f)
+
+    if line is None:
+        marks.add_component_mark(mark_dict, 0, 'An appropriate line could not be found in your file.')
+    else:
+        if line_match_fn(line):
+            mk = component_mark
+            comment = 'File line "%s" matches expected pattern.' % line
+
+        else:
+            mk = 0
+            comment = 'File line "%s" does not match the expected pattern.' % line
+
+        if pattern_str is not None:
+            comment += ' Expected pattern was "%s"' % pattern_str
+
+        marks.add_component_mark(mark_dict, component_mark, comment)
+
+
