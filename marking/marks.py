@@ -2,7 +2,16 @@ __author__ = 'nah'
 
 
 def set_part(mark_dict, part):
+    # if current part exists, need to track
+
+    if 'parts_order' not in mark_dict:
+        mark_dict['parts_order'] = [part]
+    else:
+        mark_dict['parts_order'].append(part)
+
+
     mark_dict['current_part'] = part
+
     mark_dict['parts'][part] = {}
 
 
@@ -11,8 +20,7 @@ def current_part(mark_dict):
         mark_dict['parts'] = {}
 
     if 'current_part' not in mark_dict:
-        mark_dict['current_part'] = ''
-        mark_dict['parts'][mark_dict['current_part']] = {}
+        set_part(mark_dict, '')
 
     return mark_dict['parts'][mark_dict['current_part']]
 

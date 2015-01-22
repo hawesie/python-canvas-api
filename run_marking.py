@@ -1,12 +1,8 @@
 __author__ = 'nah'
 
-import string
-import fnmatch
-import os
-
 from concurrent import futures
 
-from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions
+from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions, java_actions
 
 
 def mark(submission, marker_fn):
@@ -50,52 +46,24 @@ def git_file_marker(submission, attachments, marks_dict):
 
     if len(file_tokens) > 2:
         file_tokens = file_tokens[0:2]
-        marks.add_comment('More that two tokens in submitted file, using only %s' % file_tokens)
+        marks.add_comment('More than two tokens in submitted file, using only %s' % file_tokens)
 
-
-
-    # part 1
+    marks.set_part(marks_dict, 'Part 1')
     with file_actions.SubmissionDirectory(submission) as dir:
-        marks.set_part(marks_dict, 'Part 1')
         git_actions.clone_repo(file_tokens[0], dir.path)
         marks.add_component_mark(marks_dict, 1, 'Cloned %s successfully' % file_tokens[0])
-        file_actions.make_empty('bin', dir.path)
 
-        matches = []
-        for root, dirnames, filenames in os.walk(dir.path):
-            for filename in fnmatch.filter(filenames, 'WhoAmI.java'):
-                full_path = os.path.join(root, filename)
-                rel_from_root = full_path[len(dir.path) + 1:]
-                matches.append(rel_from_root)
+        # whether compilation completed successful, and what file was used for compilation
+        compiled, filename = java_actions.compile_java_class('WhoAmI', 'git.part1', dir.path, marks_dict, 0)
+        if compiled:
+            success, output = java_actions.run_java_class('WhoAmI', 'git.part1', dir.path, filename, marks_dict, 1,
+                                                          expected_output=submission['username'])
 
-        if len(matches) == 0:
-            marks.add_component_mark(marks_dict, -1, 'No file WhoAmI.java found in repository')
         else:
-            java_file = matches[0]
+            marks.add_component_mark(marks_dict, 0, 'Unable to run class as it did not compile. ')
 
-            if java_file == 'src/git/part1/WhoAmI.java':
-                compile = 'javac -d bin src/git/part1/WhoAmI.java'
-                run = 'java -classpath bin git.part1.WhoAmI'
-            else:
-                marks.add_component_mark(marks_dict, -0.5,
-                                         'Incorrect file structure. I was expecting your code to be layed out as ./src/git/part1/WhoAmI.java but yours was ./%s' % java_file)
-                compile = 'javac -d bin %s' % java_file
-                class_file = string.replace(java_file, '.java', '')
-                class_file = string.replace(class_file, '/', '.')
-                run = 'java -classpath bin %s' % class_file
-
-        if file_actions.mark_process(compile, dir.path, marks_dict, 0):
-            if not file_actions.mark_process(run, dir.path, marks_dict, 1, expected_output=submission['username']):
-                if not run == 'java -classpath bin git.part1.WhoAmI':
-                    file_actions.mark_process('java -classpath bin git.part1.WhoAmI', dir.path, marks_dict, 1,
-                                              expected_output=submission['username'],
-                                              success_comment='Mismatch between file structure and package structure, hence previous failure.')
-        else:
-            marks.add_component_mark(marks_dict, 0, 'Unable to run class as it did not compile.')
-
-    # part 2
+    marks.set_part(marks_dict, 'Part 2')
     with file_actions.SubmissionDirectory(submission) as dir:
-        marks.set_part(marks_dict, 'Part 2')
         git_actions.clone_repo(file_tokens[1], dir.path)
         marks.add_component_mark(marks_dict, 0.5, 'Cloned %s successfully' % file_tokens[1])
 
@@ -117,6 +85,26 @@ def git_file_marker(submission, attachments, marks_dict):
 
         file_actions.mark_file('edit-me.md', dir.path, marks_dict, 0.5, mark_file_fn)
 
+    marks.set_part(marks_dict, 'Extension')
+    with file_actions.SubmissionDirectory(submission) as dir:
+        repo = git_actions.clone_repo(file_tokens[0], dir.path)
+
+        marks.add_component_mark(marks_dict, 0, 'Cloned %s successfully' % file_tokens[0])
+
+        # whether compilation completed successful, and what file was used for compilation
+        compiled, filename = java_actions.compile_java_class('LastCommit', 'git.extension', dir.path, marks_dict, 0)
+        if compiled:
+            success, output = java_actions.run_java_class('LastCommit', 'git.extension', dir.path, filename, marks_dict,
+                                                          1,
+                                                          expected_output=git_actions.get_last_commit(repo).__str__())
+            if success:
+                marks.add_component_mark(marks_dict, 0, 'Kudos for successfully completing the extension.')
+            else:
+                marks.add_component_mark(marks_dict, 0,
+                                         'Well done for attempting the extension, but the output was not correct. Please check "git log" for your last commit hash.')
+
+        else:
+            marks.add_component_mark(marks_dict, 0, 'Unable to run class as it did not compile.')
     return marks_dict
 
 if __name__ == "__main__":

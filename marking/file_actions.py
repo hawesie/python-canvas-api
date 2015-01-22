@@ -59,25 +59,38 @@ def run_process(cmd, cwd):
     return success, output.strip()
 
 
-def mark_process(cmd, cwd, mark_dict, component_mark, success_comment='', failure_comment='', expected_output=None):
-    success, output = run_process(cmd, cwd)
-    if success:
+def mark_process(cmd, cwd, mark_dict, component_mark, success_comment='', failure_comment=''):
 
-        if expected_output is None:
-            marks.add_component_mark(mark_dict, component_mark, 'Successfully ran "%s". %s' % (cmd, success_comment))
-        elif expected_output.lower() == output.lower():
-            marks.add_component_mark(mark_dict, component_mark, 'Successfully ran "%s". Output matched "%s". %s' % (
-            cmd, expected_output, success_comment))
-        else:
-            marks.add_component_mark(mark_dict, component_mark,
-                                     'Successfully ran "%s" but output "%s" did not match expected output "%s". %s' % (
-                                     cmd, output, expected_output, failure_comment))
+    success, output = run_process(cmd, cwd)
+
+    if success:
+        marks.add_component_mark(mark_dict, component_mark, 'Successfully ran "%s". %s' % (cmd, success_comment))
 
     else:
         marks.add_component_mark(mark_dict, 0,
                                  'Could not run "%s". Output was "%s". %s' % (cmd, output, failure_comment))
 
-    return success
+    return success, output
+
+
+def mark_process_output(cmd, cwd, expected_output, mark_dict, component_mark, success_comment='', failure_comment=''):
+    success, output = mark_process(cmd, cwd, mark_dict, 0, success_comment, failure_comment)
+
+    if success:
+
+        if expected_output.lower() == output.lower():
+            marks.add_component_mark(mark_dict, component_mark,
+                                     'Output of "%s" matched "%s". %s' % (cmd, expected_output, success_comment))
+        else:
+            marks.add_component_mark(mark_dict, component_mark,
+                                     'Output of "%s" was "%s" which does not match expected output "%s". %s' % (
+                                     cmd, output, expected_output, failure_comment))
+
+    else:
+        marks.add_component_mark(mark_dict, 0,
+                                 'Could not run "%s" so could not test output. %s' % (cmd, failure_comment))
+
+    return success, output
 
 
 def mark_file(file_path, base_path, mark_dict, component_mark, mark_fn):
