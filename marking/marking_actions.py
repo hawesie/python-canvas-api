@@ -5,8 +5,9 @@ import re
 class Marker(object):
     """"""
 
-    def __init__(self, canvas_api, submission_store):
+    def __init__(self, course_id, canvas_api, submission_store):
         """Constructor for Marker"""
+        self.course_id = course_id
         self.canvas_api = canvas_api
         self.submission_store = submission_store
 
@@ -30,10 +31,16 @@ class Marker(object):
             A dictionary mapping filenames to their contents.
         """
 
-        # get the submission from the store
-        self.submission_store.
+        # first try database retrieval
+        attachments = self.submission_store.get_submission_attachments(self.course_id, submission)
 
-        return self.canvas_api.get_submission_attachments(submission, as_bytes=True)
+        if attachments is None:
+            attachments = self.canvas_api.get_submission_attachments(submission, as_bytes=True)
+
+            # get the submission from the store
+            self.submission_store.store_submission_attachments(self.course_id, submission, attachments)
+
+        return attachments
 
 
     def mark(self, submission):
@@ -63,10 +70,10 @@ class FileTokenMarker(Marker):
         Marks the submission based on tokens in the attachments, but does not write attachments to disk.
     """
 
-    def __init__(self, canvas_api, submission_store, file_checker_fn=None, file_tokeniser_fn=None,
+    def __init__(self, course_id, canvas_api, submission_store, file_checker_fn=None, file_tokeniser_fn=None,
                  token_marker_fn=None):
         """Constructor for FileTokenMarker"""
-        super(FileTokenMarker, self).__init__(canvas_api, submission_store)
+        super(FileTokenMarker, self).__init__(course_id, canvas_api, submission_store)
         self.file_checker_fn = file_checker_fn
         self.file_tokeniser_fn = file_tokeniser_fn
         self.token_marker_fn = token_marker_fn

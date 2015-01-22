@@ -36,10 +36,42 @@ class SubmissionStore():
             self._store_single_submission(submissions_collection, submissions)
 
 
+    def get_submission_attachments(self, course_id, submission):
+
+        existing_submission = self.get_stored_submission(course_id, submission['assignment_id'], submission['user_id'])
+        attachments = None
+        if existing_submission is not None:
+            if 'attachment-files' in submission:
+                attachments = {}
+                att_dict = submission['attachment-files']
+                for attachment in att_dict.values():
+                    attachments[attachment['filename']] = attachment['contents']
+
+        return attachments
+
 
     def store_submission_attachments(self, course_id, submission, attachments):
         course_id = str(course_id)
         assignment_id = str(submission['assignment_id'])
+
+        submissions_collection = self.client[course_id][assignment_id]
+        query = {'user_id': submission['user_id']}
+
+        existing_submission = submissions_collection.find_one(query)
+
+        att_dict = {}
+        count = 0
+        # keys on mongo can't have . or some special characters, so flatten out a bit
+        for (k, v) in attachments.iteritems():
+            att_dict[str(count)] = {}
+            att_dict[str(count)]['filename'] = k
+            att_dict[str(count)]['contents'] = v
+            count += 1
+
+        existing_submission['attachment-files'] = att_dict
+
+        submissions_collection.update(query, existing_submission)
+
 
 
     def get_submissions_to_mark(self, course_id, assignment_id):

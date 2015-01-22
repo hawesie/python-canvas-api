@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
         return True
 
-    new_marker_fun = lambda: marking_actions.FileTokenMarker(capi, store, file_checker_fn=check_files)
+    new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store, file_checker_fn=check_files)
 
     n_workers = 1
 
