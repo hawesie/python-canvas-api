@@ -1,11 +1,13 @@
 __author__ = 'nah'
 
+import string
 import fnmatch
 import os
 
 from concurrent import futures
 
 from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions
+
 
 def mark(submission, marker_fn):
     marker = marker_fn()
@@ -30,16 +32,18 @@ def check_files(submission, file_dict, marks_dict):
     return True
 
 
-def git_file_marker(submission, attachments, marks):
-    if not check_files(submission, attachments, marks):
-        return marks
+def git_file_marker(submission, attachments, marks_dict):
+    if not check_files(submission, attachments, marks_dict):
+        return marks_dict
 
     num_files = len(attachments)
 
     assert num_files > 0
 
     filename = attachments.keys()[0]
+    tokeniser = lambda f: f.split()
     file_tokens = tokeniser(attachments[filename])
+
 
     if num_files > 1:
         marks.add_comment('More that one file submitted, using only %s' % filename)
@@ -48,9 +52,12 @@ def git_file_marker(submission, attachments, marks):
         file_tokens = file_tokens[0:2]
         marks.add_comment('More that two tokens in submitted file, using only %s' % file_tokens)
 
+
+
+    # part 1
     with file_actions.SubmissionDirectory(submission) as dir:
-        print dir.path
         git_actions.clone_repo(file_tokens[0], dir.path)
+        marks.add_component_mark(marks_dict, 1, 'Cloned %s successfully' % file_tokens[0])
         file_actions.make_empty('bin', dir.path)
 
         matches = []
@@ -61,18 +68,37 @@ def git_file_marker(submission, attachments, marks):
                 matches.append(rel_from_root)
 
         if len(matches) == 0:
-            marks.add_component_mark(marks, -1, 'No file WhoAm.java found in repository')
-
-        java_file = matches[0]
-
-        if java_file == 'src/git/part1/WhoAmI.java':
-
-            compile = 'javac -d bin src/git/part1/WhoAmI.java'
-            run = 'java -d bin src/git/part1/WhoAmI.java'
+            marks.add_component_mark(marks_dict, -1, 'No file WhoAmI.java found in repository')
         else:
-            print 'not exists'
+            java_file = matches[0]
 
-    return marks
+            if java_file == 'src/git/part1/WhoAmI.java':
+                compile = 'javac -d bin src/git/part1/WhoAmI.java'
+                run = 'java -classpath bin git.part1.WhoAmI'
+            else:
+                marks.add_component_mark(marks_dict, -0.5,
+                                         'Incorrect file structure. I was expecting your code to be layed out as ./src/git/part1/WhoAmI.java but yours was ./%s' % java_file)
+                compile = 'javac -d bin %s' % java_file
+                class_file = string.replace(java_file, '.java', '')
+                class_file = string.replace(class_file, '/', '.')
+                run = 'java -classpath bin %s' % class_file
+
+        if file_actions.mark_process(compile, dir.path, marks_dict, 0):
+            if not file_actions.mark_process(run, dir.path, marks_dict, 1, expected_output=submission['username']):
+                if not run == 'java -classpath bin git.part1.WhoAmI':
+                    file_actions.mark_process('java -classpath bin git.part1.WhoAmI', dir.path, marks_dict, 1,
+                                              expected_output=submission['username'],
+                                              success_comment='Mismatch between file structure and package structure, hence previous failure.')
+        else:
+            marks.add_component_mark(marks_dict, 0, 'Unable to run class as it did not compile.')
+
+    # part 2
+    with file_actions.SubmissionDirectory(submission) as dir:
+        repo = git_actions.clone_repo(file_tokens[1], dir.path)
+        marks.add_component_mark(marks_dict, 0.5, 'Cloned %s successfully' % file_tokens[1])
+        git_actions.get_commit_log(repo)
+
+    return marks_dict
 
 if __name__ == "__main__":
     capi = canvas_api.CanvasAPI("1848~N3mmmxpnXbEchYrRMhHBSVzLY6spgJteMxBhumiOHcMqb2R9CrJoyvB1v9FC0ITt")
@@ -105,7 +131,6 @@ if __name__ == "__main__":
 
     print('%s submissions to mark' % submissions.count())
 
-    tokeniser = lambda f: f.split()
     new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store,
                                                              attachments_marker_fn=git_file_marker)
 
