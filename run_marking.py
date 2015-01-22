@@ -1,8 +1,11 @@
 __author__ = 'nah'
 
+import fnmatch
+import os
+
 from concurrent import futures
 
-from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions
+from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions
 
 def mark(submission, marker_fn):
     marker = marker_fn()
@@ -46,7 +49,28 @@ def git_file_marker(submission, attachments, marks):
         marks.add_comment('More that two tokens in submitted file, using only %s' % file_tokens)
 
     with file_actions.SubmissionDirectory(submission) as dir:
-        print 'test'
+        print dir.path
+        git_actions.clone_repo(file_tokens[0], dir.path)
+        file_actions.make_empty('bin', dir.path)
+
+        matches = []
+        for root, dirnames, filenames in os.walk(dir.path):
+            for filename in fnmatch.filter(filenames, 'WhoAmI.java'):
+                full_path = os.path.join(root, filename)
+                rel_from_root = full_path[len(dir.path) + 1:]
+                matches.append(rel_from_root)
+
+        if len(matches) == 0:
+            marks.add_component_mark(marks, -1, 'No file WhoAm.java found in repository')
+
+        java_file = matches[0]
+
+        if java_file == 'src/git/part1/WhoAmI.java':
+
+            compile = 'javac -d bin src/git/part1/WhoAmI.java'
+            run = 'java -d bin src/git/part1/WhoAmI.java'
+        else:
+            print 'not exists'
 
     return marks
 
