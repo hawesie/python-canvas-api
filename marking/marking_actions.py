@@ -70,13 +70,10 @@ class FileTokenMarker(Marker):
         Marks the submission based on tokens in the attachments, but does not write attachments to disk.
     """
 
-    def __init__(self, course_id, canvas_api, submission_store, file_checker_fn=None, file_tokeniser_fn=None,
-                 token_marker_fn=None):
+    def __init__(self, course_id, canvas_api, submission_store, attachments_marker_fn=None):
         """Constructor for FileTokenMarker"""
         super(FileTokenMarker, self).__init__(course_id, canvas_api, submission_store)
-        self.file_checker_fn = file_checker_fn
-        self.file_tokeniser_fn = file_tokeniser_fn
-        self.token_marker_fn = token_marker_fn
+        self.attachments_marker_fn = attachments_marker_fn
 
 
     def mark(self, submission):
@@ -87,9 +84,6 @@ class FileTokenMarker(Marker):
         submission['username'] = self.get_username(submission)
 
         marks = {}
-
-        if self.file_checker_fn is not None:
-            if not self.file_checker_fn(submission, attachments, marks):
-                return marks
+        self.attachments_marker_fn(submission, attachments, marks)
 
         return marks

@@ -2,11 +2,53 @@ __author__ = 'nah'
 
 from concurrent import futures
 
-from marking import canvas_api, mongodb_store, marking_actions, marks
+from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions
 
 def mark(submission, marker_fn):
     marker = marker_fn()
     return marker.mark(submission)
+
+
+def check_files(submission, file_dict, marks_dict):
+    if len(file_dict) == 0:
+        marks.set_final_mark(marks_dict, 0, 'No files found')
+        return False
+    if len(file_dict) > 1:
+        marks.add_comment(marks_dict,
+                          'More than one file found, but only one should have been submitted. Outcome may be unpredictable.')
+
+    for filename in file_dict:
+        tokens = filename.split('.')
+        if marking_actions.is_username(tokens[0]) and tokens[0].lower() == submission['username'].lower():
+            marks.add_comment(marks_dict, 'Filename %s is correct.' % filename)
+        else:
+            marks.add_component_mark(marks_dict, -0.5, 'Filename %s is not a username' % tokens[0])
+
+    return True
+
+
+def git_file_marker(submission, attachments, marks):
+    if not check_files(submission, attachments, marks):
+        return marks
+
+    num_files = len(attachments)
+
+    assert num_files > 0
+
+    filename = attachments.keys()[0]
+    file_tokens = tokeniser(attachments[filename])
+
+    if num_files > 1:
+        marks.add_comment('More that one file submitted, using only %s' % filename)
+
+    if len(file_tokens) > 2:
+        file_tokens = file_tokens[0:2]
+        marks.add_comment('More that two tokens in submitted file, using only %s' % file_tokens)
+
+    with file_actions.SubmissionDirectory(submission) as dir:
+        print 'test'
+
+    return marks
 
 if __name__ == "__main__":
     capi = canvas_api.CanvasAPI("1848~N3mmmxpnXbEchYrRMhHBSVzLY6spgJteMxBhumiOHcMqb2R9CrJoyvB1v9FC0ITt")
@@ -39,24 +81,9 @@ if __name__ == "__main__":
 
     print('%s submissions to mark' % submissions.count())
 
-    def check_files(submission, file_dict, marks_dict):
-        if len(file_dict) == 0:
-            marks.set_final_mark(marks_dict, 0, 'No files found')
-            return False
-        if len(file_dict) > 1:
-            marks.add_comment(marks_dict,
-                              'More than one file found, but only one should have been submitted. Outcome may be unpredictable.')
-
-        for filename in file_dict:
-            tokens = filename.split('.')
-            if marking_actions.is_username(tokens[0]) and tokens[0].lower() == submission['username'].lower():
-                marks.add_comment(marks_dict, 'Filename %s is correct.' % filename)
-            else:
-                marks.add_component_mark(marks_dict, -0.5, 'Filename %s is not a username' % tokens[0])
-
-        return True
-
-    new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store, file_checker_fn=check_files)
+    tokeniser = lambda f: f.split()
+    new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store,
+                                                             attachments_marker_fn=git_file_marker)
 
     n_workers = 1
 
