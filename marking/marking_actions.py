@@ -86,7 +86,7 @@ class FileTokenMarker(Marker):
         # add username into submission for convenience later
         submission['username'] = self.get_username(submission)
         #
-        print('marking %s' % submission['username'])
+        # print('marking %s, %s' % (submission['username'], submission['user_id']))
 
         mark_dict = {}
         mark_dict['username'] = submission['username']

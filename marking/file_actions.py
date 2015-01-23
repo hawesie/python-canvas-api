@@ -17,11 +17,14 @@ class SubmissionDirectory(object):
 
     def __enter__(self):
         os.makedirs(self.path)
+        assert os.path.exists(self.path)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        shutil.rmtree(self.path)
-
+        try:
+            shutil.rmtree(self.path)
+        except OSError, e:
+            pass
 
 def file_exists(file_path, base_path=None):
     if base_path is not None:

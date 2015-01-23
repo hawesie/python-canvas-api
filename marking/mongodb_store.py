@@ -49,6 +49,18 @@ class SubmissionStore():
 
         return attachments
 
+    def store_submission_marks(self, course_id, submission, marks_dict):
+        course_id = str(course_id)
+        assignment_id = str(submission['assignment_id'])
+
+        submissions_collection = self.client[course_id][assignment_id]
+        query = {'user_id': submission['user_id']}
+
+        existing_submission = submissions_collection.find_one(query)
+
+        existing_submission['marks'] = marks_dict
+
+        submissions_collection.update(query, existing_submission)
 
     def store_submission_attachments(self, course_id, submission, attachments):
         course_id = str(course_id)

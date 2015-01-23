@@ -1,14 +1,27 @@
 __author__ = 'nah'
 
+import os
+import threading
+
 from git import Repo
 
 
+lock = threading.Lock()
+
 def clone_repo(git_url, repo_dir):
-    # print to_ssh_url(git_url)
+    assert os.path.exists(repo_dir)
+
     try:
+        lock.acquire()
+        # print to_ssh_url(git_url)
         repo = Repo.clone_from(to_ssh_url(git_url), repo_dir)
+        return repo
     except Exception, e:
+        # print e
         return None
+    finally:
+        lock.release()
+        # print 'done ', to_ssh_url(git_url)
 
 def get_last_commit(repo):
     head = repo.head  # the head points to the active branch/ref

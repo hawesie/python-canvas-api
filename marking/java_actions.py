@@ -59,9 +59,9 @@ def run_java_class(class_name, package, cwd, compiled_file, marks_dict, componen
         if expected_output is not None:
             success, output = file_actions.mark_process_output(command, cwd, expected_output, marks_dict,
                                                                component_mark,
-                                                               uccess_comment='Mismatch between file structure and package structure, hence previous failure.')
+                                                               success_comment='Mismatch between file structure and package structure, hence previous failure.')
         else:
             success, output = file_actions.mark_process(command, cwd, marks_dict, component_mark,
-                                                        uccess_comment='Mismatch between file structure and package structure, hence previous failure.')
+                                                        success_comment='Mismatch between file structure and package structure, hence previous failure.')
 
     return success, output

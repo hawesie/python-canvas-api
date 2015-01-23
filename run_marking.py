@@ -1,7 +1,5 @@
 __author__ = 'nah'
 
-from concurrent import futures
-
 from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions, java_actions
 
 
@@ -52,8 +50,6 @@ def git_file_marker(submission, attachments, marks_dict):
     # file_tokens = filter(lambda token: token.startswith('git') or token.startswith('http'), tokeniser(attachments[filename]))
     file_tokens = tokeniser(attachments[filename])
 
-    print file_tokens
-
     if num_files > 1:
         marks.add_comment(marks_dict, 'More that one file submitted, using only %s' % filename)
 
@@ -70,7 +66,6 @@ def git_file_marker(submission, attachments, marks_dict):
 
             # whether compilation completed successful, and what file was used for compilation
             compiled, filename = java_actions.compile_java_class('WhoAmI', 'git.part1', dir.path, marks_dict, 0)
-            print marks_dict
             if compiled:
                 success, output = java_actions.run_java_class('WhoAmI', 'git.part1', dir.path, filename, marks_dict, 1,
                                                               expected_output=submission['username'])
@@ -80,12 +75,12 @@ def git_file_marker(submission, attachments, marks_dict):
             marks.add_component_mark(marks_dict, 0,
                                      'Could not clone repo %s. Did you add Nick as a member?' % file_tokens[0])
 
+
     marks.set_part(marks_dict, 'Part 2')
     with file_actions.SubmissionDirectory(submission) as dir:
 
         if git_actions.clone_repo(file_tokens[1], dir.path) is not None:
             marks.add_component_mark(marks_dict, 0.5, 'Cloned %s successfully' % file_tokens[1])
-
 
             def get_line_fn(f):
                 # this is a big hack to get around the fact I didn't specify the exercise well enough
@@ -104,7 +99,7 @@ def git_file_marker(submission, attachments, marks_dict):
 
             file_actions.mark_file('edit-me.md', dir.path, marks_dict, 0.5, mark_file_fn)
         else:
-            marks.add_component_mark(marks_dict, 0, 'Could not clone repo' % file_tokens[1])
+            marks.add_component_mark(marks_dict, 0, 'Could not clone repo %s' % file_tokens[1])
 
     marks.set_part(marks_dict, 'Extension')
     with file_actions.SubmissionDirectory(submission) as dir:
@@ -119,7 +114,7 @@ def git_file_marker(submission, attachments, marks_dict):
                                                               marks_dict,
                                                               1,
                                                               expected_output=git_actions.get_last_commit(
-                                                                  dir.path).__str__())
+                                                                  repo).__str__())
                 if success:
                     marks.add_component_mark(marks_dict, 0, 'Kudos for successfully completing the extension.')
                 else:
@@ -162,25 +157,35 @@ if __name__ == "__main__":
     # store.store_assignment_submissions(course_id, assignment_id, submissions)
 
     # the assignments that still need marking
-    # submissions = store.get_submissions_to_mark(course_id, assignment_id)
-    # print('%s submissions to mark' % submissions.count())
+    submissions = store.get_submissions_to_mark(course_id, assignment_id)
+    print('%s submissions to mark' % submissions.count())
 
-    test_ids = [75688, 69321]
-    test_ids = [67128]
-    submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
+    # test_ids = [75688, 69321]
+    # test_ids = [67128]
+    # test_ids = [71818]
+    # test_ids = [72929]
+    # submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
 
     new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store,
                                                              attachments_marker_fn=git_file_marker)
 
-    n_workers = 10
+    count = 1
+    for submission in submissions:
+        print ('%s %s/%s' % (submission['user_id'], count, submissions.count()))
+        mark_dict = mark(submission, new_marker_fun)
+        store.store_submission_marks(course_id, submission, mark_dict)
+        count += 1
 
-    with futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
 
-        fs = [executor.submit(mark, submission, new_marker_fun) for submission in submissions]
-
-        # futures.wait(fs)
-
-        for future in futures.as_completed(fs):
-            print future.result()
+        # n_workers = 10
+        #
+        # with futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+        #
+        # fs = [executor.submit(mark, submission, new_marker_fun) for submission in submissions]
+        #
+        #     # futures.wait(fs)
+        #
+        #     for future in futures.as_completed(fs):
+        #         print('done: %s' % future.result())
 
 
