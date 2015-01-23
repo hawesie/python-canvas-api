@@ -28,7 +28,7 @@ def current_part(mark_dict):
 
 def add_comment(mark_dict, comment):
     if 'comment' in current_part(mark_dict):
-        current_part(mark_dict)['comment'].append(comment)
+        current_part(mark_dict)['comment'] += comment
     else:
         current_part(mark_dict)['comment'] = comment
 

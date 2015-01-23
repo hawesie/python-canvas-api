@@ -1,6 +1,8 @@
 __author__ = 'nah'
 import re
 
+import marks
+
 
 class Marker(object):
     """"""
@@ -77,15 +79,24 @@ class FileTokenMarker(Marker):
 
 
     def mark(self, submission):
-        # get attachments for sumission
-        attachments = self.get_attachments(submission)
 
+        # get attachments for submission
+        attachments = self.get_attachments(submission)
+        #
         # add username into submission for convenience later
         submission['username'] = self.get_username(submission)
+        #
+        print('marking %s' % submission['username'])
 
-        marks = {}
-        self.attachments_marker_fn(submission, attachments, marks)
+        mark_dict = {}
+        mark_dict['username'] = submission['username']
+        mark_dict['user_id'] = submission['user_id']
 
-        return marks
+        if attachments is not None:
+            self.attachments_marker_fn(submission, attachments, mark_dict)
+        else:
+            marks.set_final_mark(mark_dict, 0, 'No attachment files found')
+
+        return mark_dict
 
 
