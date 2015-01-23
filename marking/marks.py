@@ -34,7 +34,7 @@ def add_comment(mark_dict, comment):
 
 
 def set_final_mark(mark_dict, final_mark, comment=''):
-    current_part(mark_dict)['final_mark'] = (final_mark, comment)
+    mark_dict['final_mark'] = (final_mark, comment)
 
 
 def add_component_mark(mark_dict, component_mark, comment=''):
@@ -43,12 +43,31 @@ def add_component_mark(mark_dict, component_mark, comment=''):
 
     current_part(mark_dict)['component_marks'].append((component_mark, comment))
 
-    # def apply_mark_fn(mark_fn, mark_dict, component_mark, success_comment='', failure_comment=''):
-    #
-    # success = mark_fn(mark_dict, component_mark)
-    #     if success:
-    #         add_component_mark(mark_dict, component_mark, success_comment)
-    #     else:
-    #         add_component_mark(mark_dict, 0, failure_comment)
-    #
-    #     return success
+def aggregate_marks(mark_dict):
+    if 'final_mark' in mark_dict:
+        return mark_dict['final_mark'][0], mark_dict['final_mark'][1]
+
+    parts = mark_dict['parts_order']
+    comment = ''
+    mark = 0
+    for part in parts:
+        comment += part + '\n'
+        
+        part_components = mark_dict['parts'][part]
+
+        
+
+        if 'comment' in part_components:
+            comment += part_components['comment'] + '\n'
+
+        if 'component_marks' in part_components:
+            # print part_components
+            for component in part_components['component_marks']:
+                mark += component[0]
+                try:
+                    comment += component[1] + '\n'
+                except UnicodeDecodeError, e:
+                    print 'failed to concat comment, ', component[1]
+
+
+    return mark, comment

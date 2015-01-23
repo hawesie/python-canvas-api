@@ -62,6 +62,7 @@ class SubmissionStore():
 
         submissions_collection.update(query, existing_submission)
 
+
     def store_submission_attachments(self, course_id, submission, attachments):
         course_id = str(course_id)
         assignment_id = str(submission['assignment_id'])
@@ -115,6 +116,7 @@ class SubmissionStore():
 
     def store_user(self, user):
         self.users_collection.update({'id': user['id']}, user, upsert=True)
+        return user['login_id']
 
     def get_username(self, uid):
         user = self.users_collection.find_one({'id': uid})

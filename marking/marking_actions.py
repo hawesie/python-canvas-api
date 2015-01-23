@@ -19,7 +19,7 @@ class Marker(object):
         username = self.submission_store.get_username(uid)
         if username is None:
             user = self.canvas_api.get_user(uid)
-            print user
+            # print user
             username = self.submission_store.store_user(user)
         return username
 
@@ -85,7 +85,8 @@ class FileTokenMarker(Marker):
         #
         # add username into submission for convenience later
         submission['username'] = self.get_username(submission)
-        #
+        
+        
         # print('marking %s, %s' % (submission['username'], submission['user_id']))
 
         mark_dict = {}

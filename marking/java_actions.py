@@ -21,7 +21,7 @@ def compile_java_class(class_name, package, cwd, marks_dict, component_mark, src
             matches.append(rel_from_root)
 
     if len(matches) == 0:
-        marks.add_component_mark(marks_dict, -1, 'No file %s found in repository' % to_find)
+        marks.add_component_mark(marks_dict, 0, 'No file %s found in repository' % to_find)
         return False, ''
     else:
         java_file = matches[0]

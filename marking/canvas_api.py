@@ -13,18 +13,35 @@ class CanvasAPI():
         self.access_token = access_token
         self.api_url = base_url + api_prefix
 
-    def get_response(self, url):
+    def put(self, api_url, payload=None):
+        url = self.api_url + api_url
+
+        if payload is None:
+            payload = {}
+
         if self.access_token is not None:
-            payload = {'access_token': self.access_token}
-            r = requests.get(url, params=payload)
-        else:
-            r = requests.get(url)
+            payload['access_token'] =  self.access_token
+
+        r = requests.put(url, params=payload)
 
         # raises an exception if there was an http error
         r.raise_for_status()
         return r
 
-    def get_responses(self, api):
+    def get_response(self, url, payload=None):
+        if payload is None:
+            payload = {}
+
+        if self.access_token is not None:
+            payload['access_token'] =  self.access_token
+
+        r = requests.get(url, params=payload)
+
+        # raises an exception if there was an http error
+        r.raise_for_status()
+        return r
+
+    def get_responses(self, api, payload=None):
         url = self.api_url + api
 
         responses = []
@@ -40,9 +57,9 @@ class CanvasAPI():
 
         return responses
 
-    def get(self, api, to_json=True):
+    def get(self, api, to_json=True, payload=None):
 
-        responses = self.get_responses(api)
+        responses = self.get_responses(api, payload=payload)
         if to_json:
             responses = [r.json() for r in responses]
 
@@ -67,8 +84,17 @@ class CanvasAPI():
         :param assignment_id:
         :return:
         """
-        return filter(lambda sub: sub['workflow_state'] == 'submitted',
-                      self.get('/courses/%s/assignments/%s/submissions' % (course_id, assignment_id)))
+        submissions = self.get('/courses/%s/assignments/%s/submissions' % (course_id, assignment_id))        
+        return filter(lambda sub: sub['workflow_state'] != 'unsubmitted', submissions)
+
+    def grade_assignment_submission(self, course_id, assignment_id, user_id, grade, comment=None):
+        
+        payload = {'submission[posted_grade]': grade}
+        if comment is not None:
+            payload['comment[text_comment]'] = comment
+
+        return self.put('/courses/%s/assignments/%s/submissions/%s' % (course_id, assignment_id, user_id), payload=payload)            
+    
 
 
     def get_submission_attachments(self, submission, as_bytes=False):
