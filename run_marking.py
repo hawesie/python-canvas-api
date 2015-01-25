@@ -48,7 +48,7 @@ def git_file_marker(submission, attachments, marks_dict):
     tokeniser = lambda f: f.split()
 
     # file_tokens = filter(lambda token: token.startswith('git') or token.startswith('http'), tokeniser(attachments[filename]))
-    file_tokens = tokeniser(attachments[filename])
+    file_tokens = tokeniser(str(attachments[filename]))
 
     if num_files > 1:
         marks.add_comment(marks_dict, 'More that one file submitted, using only %s' % filename)
