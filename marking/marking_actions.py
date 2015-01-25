@@ -49,7 +49,7 @@ class Marker(object):
         return {}
 
 
-username_pattern = re.compile('[a-z][a-z][a-z][0-9][0-9][0-9]', re.IGNORECASE)
+username_pattern = re.compile('[a-z]{3}[0-9]{3,4}$', re.IGNORECASE)
 
 
 def is_username(un):
@@ -58,7 +58,7 @@ def is_username(un):
     :param un:
     :return:
     """
-    return un is not None and len(un) == 6 and username_pattern.match(un) is not None
+    return un is not None and username_pattern.match(un) is not None
 
 
 def split_and_check(filename, split_on='.'):
