@@ -48,26 +48,24 @@ def aggregate_marks(mark_dict):
         return mark_dict['final_mark'][0], mark_dict['final_mark'][1]
 
     parts = mark_dict['parts_order']
-    comment = ''
+    comment = str()
     mark = 0
     for part in parts:
-        comment += part + '\n'
+        comment += str(part) + '\n'
         
         part_components = mark_dict['parts'][part]
 
-        
-
         if 'comment' in part_components:
-            comment += part_components['comment'] + '\n'
+            comment += str(part_components['comment']) + '\n'
 
         if 'component_marks' in part_components:
-            # print part_components
             for component in part_components['component_marks']:
                 mark += component[0]
                 try:
-                    comment += component[1] + '\n'
+                    comment += str(component[1]) + '\n'
                 except UnicodeDecodeError, e:
                     print 'failed to concat comment, ', component[1]
+
 
 
     return mark, comment

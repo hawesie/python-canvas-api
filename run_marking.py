@@ -155,17 +155,26 @@ if __name__ == "__main__":
 
     print('%s submissions retrieved from Canvas' % len(submissions))
 
+    def add_user(sub):
+        marking_actions.get_username(sub, capi, store)
+
+    # make sure username is available
+    map(add_user, submissions)
+
     # store them locally for processing -- may not be necessary, but it allows more complex queries to be made
     store.store_assignment_submissions(course_id, assignment_id, submissions)
 
+
+
     # the assignments that still need marking
     submissions = store.get_submissions_to_mark(course_id, assignment_id)
-    print('%s submissions to mark' % submissions.count())
 
-    # test_ids = [75688, 69321]
-    # test_ids = [67128]
-    # test_ids = [71818]
-    # test_ids = [72929]
+
+    # submissions = store.get_assignment_submissions(course_id, assignment_id)
+    # submissions = filter(lambda sub: len(sub['username']) == 7, submissions)
+
+
+    # test_ids = [67258]
     # submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
 
     new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store,
@@ -180,6 +189,7 @@ if __name__ == "__main__":
     # r = requests.put("https://canvas.bham.ac.uk/api/v1/courses/10065/assignments/26165/submissions/68917", params=payload)
     # print r.json()
 
+    print('%s submissions to mark' % submissions.count())
 
     count = 1
     for submission in submissions:
@@ -187,22 +197,23 @@ if __name__ == "__main__":
         mark_dict = mark(submission, new_marker_fun)
         store.store_submission_marks(course_id, submission, mark_dict)
         grade, comment = marks.aggregate_marks(mark_dict)
+        # print comment
         capi.grade_assignment_submission(course_id, assignment_id, submission['user_id'], grade, comment)
         count += 1
 
-    # for submission in submissions:
-    #     grade, comment = marks.aggregate_marks(submission['marks'])       
-    #     canvas_api.grade_assignment_submission(course_id, assignment_id, submission['user_id'], grade, comment)
+    # # for submission in submissions:
+    # #     grade, comment = marks.aggregate_marks(submission['marks'])       
+    # #     canvas_api.grade_assignment_submission(course_id, assignment_id, submission['user_id'], grade, comment)
 
-        # n_workers = 10
-        #
-        # with futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
-        #
-        # fs = [executor.submit(mark, submission, new_marker_fun) for submission in submissions]
-        #
-        #     # futures.wait(fs)
-        #
-        #     for future in futures.as_completed(fs):
-        #         print('done: %s' % future.result())
+    #     # n_workers = 10
+    #     #
+    #     # with futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+    #     #
+    #     # fs = [executor.submit(mark, submission, new_marker_fun) for submission in submissions]
+    #     #
+    #     #     # futures.wait(fs)
+    #     #
+    #     #     for future in futures.as_completed(fs):
+    #     #         print('done: %s' % future.result())
 
 

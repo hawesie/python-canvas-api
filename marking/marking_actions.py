@@ -3,6 +3,19 @@ import re
 
 import marks
 
+def get_username(submission, capi, store):
+    uid = submission['user_id']
+    username = store.get_username(uid)
+    if username is None:
+        user = capi.get_user(uid)
+        # print user
+        username = store.store_user(user)
+
+    if username is not None:
+        submission['username'] = username
+        
+    return username
+
 
 class Marker(object):
     """"""
@@ -15,13 +28,7 @@ class Marker(object):
 
 
     def get_username(self, submission):
-        uid = submission['user_id']
-        username = self.submission_store.get_username(uid)
-        if username is None:
-            user = self.canvas_api.get_user(uid)
-            # print user
-            username = self.submission_store.store_user(user)
-        return username
+        return get_username(submission, self.canvas_api, self.submission_store)
 
     def get_attachments(self, submission):
         """
