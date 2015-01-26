@@ -124,3 +124,18 @@ class SubmissionStore():
             return None
         else:
             return user['login_id']
+
+
+    def store_group(self, course_id, group, members=None):
+        course_id = str(course_id)
+        group_category = 'group_' + str(group['group_category_id'])
+        if members is not None:
+            group['members'] = members
+
+        self.client[course_id][group_category].insert(group)
+
+
+    def get_course_groups(self, course_id, group_category_id, query={}):
+        course_id = str(course_id)
+        group_category = 'group_' + str(group_category_id)
+        return self.client[course_id][group_category].find(query)

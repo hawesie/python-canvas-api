@@ -63,10 +63,16 @@ class CanvasAPI():
         if to_json:
             responses = [r.json() for r in responses]
 
-        return reduce(lambda x, y: itertools.chain(x, y), responses)
+        return list(reduce(lambda x, y: itertools.chain(x, y), responses))
 
     def get_user(self, user_id):
         return self.get('/users/%s/profile' % user_id)
+
+    def get_course_groups(self, course_id):
+        return self.get('/courses/%s/groups' % course_id)
+
+    def get_group_membership(self, group_id):
+        return self.get('/groups/%s/memberships' % group_id)
 
     def get_courses(self):
         return self.get('/courses')
