@@ -132,10 +132,37 @@ class SubmissionStore():
         if members is not None:
             group['members'] = members
 
-        self.client[course_id][group_category].insert(group)
+        query = {'id': group['id']}
+        self.client[course_id][group_category].update(query, group, upsert=True)
 
 
     def get_course_groups(self, course_id, group_category_id, query={}):
         course_id = str(course_id)
         group_category = 'group_' + str(group_category_id)
         return self.client[course_id][group_category].find(query)
+
+    def _get_key_document(self):
+        return self.client['global']['user_data'].find_one(fields=['key'])
+
+
+    def store_key(self, key):
+        key_doc = self._get_key_document()
+        global_collection = self.client['global']['user_data']
+
+        if key_doc is None:
+            global_collection.insert({'key': key})
+        else:
+            if key != key_doc['key']:
+                print('Updating key')
+                query = {'_id' : key_doc['_id']}
+                global_collection.update(query, {'key': key})            
+            else:
+                print('key unchanged')
+
+
+    def get_key(self):
+        key_doc = self._get_key_document()
+        if key_doc is None:
+            raise Exception('No key stored.')
+        else:
+            return key_doc['key']

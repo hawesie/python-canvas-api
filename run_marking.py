@@ -167,15 +167,16 @@ if __name__ == "__main__":
 
 
     # the assignments that still need marking
-    submissions = store.get_submissions_to_mark(course_id, assignment_id)
+    # submissions = store.get_submissions_to_mark(course_id, assignment_id)
 
 
     # submissions = store.get_assignment_submissions(course_id, assignment_id)
     # submissions = filter(lambda sub: len(sub['username']) == 7, submissions)
 
 
-    # test_ids = [67258]
-    # submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
+    test_ids = [67037]
+
+    submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
 
     new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store,
                                                              attachments_marker_fn=git_file_marker)
@@ -189,11 +190,11 @@ if __name__ == "__main__":
     # r = requests.put("https://canvas.bham.ac.uk/api/v1/courses/10065/assignments/26165/submissions/68917", params=payload)
     # print r.json()
 
-    print('%s submissions to mark' % submissions.count())
+    print('%s submissions to mark' % len(submissions))
 
     count = 1
     for submission in submissions:
-        print ('%s %s/%s' % (submission['user_id'], count, submissions.count()))
+        print ('%s %s/%s' % (submission['user_id'], count, len(submissions)))
         mark_dict = mark(submission, new_marker_fun)
         store.store_submission_marks(course_id, submission, mark_dict)
         grade, comment = marks.aggregate_marks(mark_dict)

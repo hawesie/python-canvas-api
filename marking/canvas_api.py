@@ -44,6 +44,8 @@ class CanvasAPI():
     def get_responses(self, api, payload=None):
         url = self.api_url + api
 
+
+        print url
         responses = []
         while True:
 
