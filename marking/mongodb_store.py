@@ -14,8 +14,26 @@ class SubmissionStore():
 
     def _store_single_submission(self, collection, submission):
         # assumption is that there can only be one submission per user in the collection
-        collection.update({'user_id': submission['user_id']}, submission, upsert=True)
 
+        if 'user_id' in submission:
+            query = {'user_id': submission['user_id']}
+        else:
+            query = {'sis_user_id': submission['sis_user_id']}
+
+        collection.update(query, submission, upsert=True)
+
+
+    def get_assignment_collection(self, course_id, assignment_id):
+        """
+        Stores the given submissions in the database.
+
+        :param course_id: The id of the course to store the submissions unders
+        :param assignment_id:  The id of the assignment to store the assignments unders
+        :returns: The mongodb collection for this assignment
+        """
+        course_id = str(course_id)
+        assignment_id = str(assignment_id)
+        return self.client[course_id][assignment_id]
 
     def store_assignment_submissions(self, course_id, assignment_id, submissions):
         """
@@ -25,9 +43,7 @@ class SubmissionStore():
         :param assignment_id:  The id of the assignment to store the assignments unders
         :param submissions: The submissions themselves, in JSON format. Can be a single submission or an iterable
         """
-        course_id = str(course_id)
-        assignment_id = str(assignment_id)
-        submissions_collection = self.client[course_id][assignment_id]
+        submissions_collection = self.get_assignment_collection(course_id,assignment_id)
 
         try:
             for submission in submissions:
@@ -118,7 +134,7 @@ class SubmissionStore():
         self.users_collection.update({'id': user['id']}, user, upsert=True)
         return user['login_id']
 
-    def get_username(self, uid):
+    def get_username(self, uid, key='id'):
         user = self.users_collection.find_one({'id': uid})
         if user is None:
             return None
@@ -135,11 +151,16 @@ class SubmissionStore():
         query = {'id': group['id']}
         self.client[course_id][group_category].update(query, group, upsert=True)
 
-
     def get_course_groups(self, course_id, group_category_id, query={}):
         course_id = str(course_id)
         group_category = 'group_' + str(group_category_id)
         return self.client[course_id][group_category].find(query)
+
+    def get_group_members(self, course_id, group_category_id, group_name):
+        course_id = str(course_id)
+        group_category = 'group_' + str(group_category_id)
+        group = self.client[course_id][group_category].find_one({'name': group_name})
+        return [member['id'] for member in group['members']]
 
     def _get_key_document(self):
         return self.client['global']['user_data'].find_one(fields=['key'])

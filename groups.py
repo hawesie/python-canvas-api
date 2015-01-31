@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # for each group in lab_group_category print out each group with members in team_category
     lab_groups = map(lambda group: (group['name'], set(map(lambda member: member['user_id'], group['members']))), store.get_course_groups(course_id, lab_group_category))
-    teams = map(lambda group: (group['name'], set(map(lambda member: member['user_id'], group['members']))), store.get_course_groups(course_id, team_category))
+    teams = map(lambda group: (group['name']., set(map(lambda member: member['user_id'], group['members']))), store.get_course_groups(course_id, team_category))
 
     team_groups = []
     for team in teams:
