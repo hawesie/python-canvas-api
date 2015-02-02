@@ -134,8 +134,14 @@ class SubmissionStore():
         self.users_collection.update({'id': user['id']}, user, upsert=True)
         return user['login_id']
 
+    def store_users(self, users):
+        map(self.store_user, users)
+
+    def get_user(self, uid, key='id'):
+        return self.users_collection.find_one({key: uid})
+
     def get_username(self, uid, key='id'):
-        user = self.users_collection.find_one({'id': uid})
+        user = self.get_user(uid, key)
         if user is None:
             return None
         else:
@@ -156,11 +162,14 @@ class SubmissionStore():
         group_category = 'group_' + str(group_category_id)
         return self.client[course_id][group_category].find(query)
 
-    def get_group_members(self, course_id, group_category_id, group_name):
+    def get_group(self, course_id, group_category_id, group_name):
         course_id = str(course_id)
         group_category = 'group_' + str(group_category_id)
-        group = self.client[course_id][group_category].find_one({'name': group_name})
-        return [member['id'] for member in group['members']]
+        return self.client[course_id][group_category].find_one({'name': group_name})
+ 
+    def get_group_members(self, course_id, group_category_id, group_name):
+        group = self.get_group(course_id, group_category_id, group_name)
+        return [member['user_id'] for member in group['members']]
 
     def _get_key_document(self):
         return self.client['global']['user_data'].find_one(fields=['key'])

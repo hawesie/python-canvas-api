@@ -82,6 +82,10 @@ class CanvasAPI():
     def get_assignments(self, course_id):
         return self.get('/courses/%s/assignments' % course_id)
 
+    def get_users(self, course_id):
+        return self.get('/courses/%s/users' % course_id)
+
+
     def get_quiz_submissions(self, course_id, quiz_id):
         return self.get('/courses/%s/quizzes/%s/submissions' % (course_id, quiz_id))
 

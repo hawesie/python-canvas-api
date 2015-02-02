@@ -2,6 +2,7 @@ __author__ = 'nah'
 import re
 
 import marks
+import itertools
 
 def get_username(submission, capi, store):
     uid = submission['user_id']
@@ -15,6 +16,38 @@ def get_username(submission, capi, store):
         submission['username'] = username
         
     return username
+
+def hamming(u1, u2):
+    
+    diffs = 0
+    for ch1, ch2 in itertools.izip_longest(u1, u2):
+        if ch1 != ch2:
+            diffs += 1
+    return diffs
+
+
+def align_username_sets(target, given, threshold=1):
+    # elements of given which are not in target
+    extra_in_given = given - target
+    extra_in_target = target - given
+    mappings = dict()
+
+    # if they match return target
+    if len(extra_in_target) > 0 or len(extra_in_given) > 0:
+
+        # now match the extra_in_given list to see if we can map to target
+        for extra in extra_in_given:
+            for targ in target:
+                similarity_score = hamming(extra, targ)
+                if similarity_score <= threshold:
+                    mappings[extra] = targ
+                    print('mapping %s to %s: %s' % (extra, targ, similarity_score))
+
+        
+        extra_in_given -= set(mappings.keys())
+        extra_in_target -= set(mappings.values())
+
+    return mappings, extra_in_target, extra_in_given
 
 
 class Marker(object):
