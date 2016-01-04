@@ -25,3 +25,9 @@ def print_submissions(submissions):
 
 
 
+def print_groups(groups):
+    print('groups:')
+    for group in groups:
+        print('%s (in %s): %s' % (group['id'], group['group_category_id'], group['name']))
+
+
