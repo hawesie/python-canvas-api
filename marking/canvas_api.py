@@ -5,6 +5,19 @@ import itertools
 import requests
 
 
+class GroupSetBuilder():
+    def __init__(self):
+        """Construct a set of groups"""
+        self.groups = {}
+
+    def add_group_member(self, user_id, group_id):
+        if group_id not in self.groups:
+            self.groups[group_id] = [user_id]
+        else:
+            self.groups[group_id].append(user_id)
+
+
+
 class CanvasAPI():
     """"""
 
@@ -106,8 +119,20 @@ class CanvasAPI():
             payload['comment[text_comment]'] = comment
 
         return self.put('/courses/%s/assignments/%s/submissions/%s' % (course_id, assignment_id, user_id), payload=payload)            
-    
 
+    def set_group_name(self, group_id, name):
+
+        payload = {'name': name}
+        return self.put('/groups/%s' % (group_id), payload=payload)            
+        
+    def set_group_membership(self, group_set_builder):
+        results = []
+        for group_id, membership in group_set_builder.groups.iteritems():            
+            payload = {}
+            payload['members[]'] = membership
+            # print payload
+            self.put('/groups/%s' % (group_id), payload=payload)            
+        # return results
 
     def get_submission_attachments(self, submission, as_bytes=False):
         """
