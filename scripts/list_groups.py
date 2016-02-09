@@ -1,4 +1,5 @@
-__author__ = 'nah'
+#!/usr/bin/env python
+# -*- coding: utf- -*-
 
 from marking import canvas_api, print_groups, mongodb_store
 import argparse

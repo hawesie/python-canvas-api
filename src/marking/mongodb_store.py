@@ -3,6 +3,8 @@
 __author__ = 'nah'
 
 import pymongo
+from bson import Binary
+
 
 def content_decode(s):
 
@@ -105,11 +107,13 @@ class SubmissionStore():
 
         att_dict = {}
         count = 0
+
         # keys on mongo can't have . or some special characters, so flatten out a bit
         for (k, v) in attachments.iteritems():
             att_dict[str(count)] = {}
             att_dict[str(count)]['filename'] = k            
-            att_dict[str(count)]['contents'] = content_decode(v)
+            # att_dict[str(count)]['contents'] = content_decode(v)
+            att_dict[str(count)]['contents'] = Binary(v)
             count += 1
 
         existing_submission['attachment-files'] = att_dict

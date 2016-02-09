@@ -1,6 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf- -*-
 
-__author__ = 'nah'
 
 from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions, java_actions
 import requests

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__author__ = 'nah'
+# -*- coding: utf- -*-
 
 from marking import canvas_api, mongodb_store
 import argparse
