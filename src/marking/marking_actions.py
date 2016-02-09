@@ -77,10 +77,22 @@ class Marker(object):
         attachments = self.submission_store.get_submission_attachments(self.course_id, submission)
 
         if attachments is None:
+
+            # fetch from canvas
             attachments = self.canvas_api.get_submission_attachments(submission, as_bytes=True)
 
-            # get the submission from the store
-            self.submission_store.store_submission_attachments(self.course_id, submission, attachments)
+            # print attachments
+            
+            if attachments is not None:
+    
+
+                # add to the store
+                self.submission_store.store_submission_attachments(self.course_id, submission, attachments)
+
+                # the retrieve again, as this allows string processing and a consistent return format
+                attachments = self.submission_store.get_submission_attachments(self.course_id, submission)
+
+                # print attachments
 
         return attachments
 

@@ -11,9 +11,16 @@ import marks
 class SubmissionDirectory(object):
     """Directory to work in"""
 
-    def __init__(self, submission, path='/tmp'):
+    def __init__(self, submission, path='/tmp', delete_on_exit=True):
         """Constructor for SubmissionDirectory"""
-        self.path = os.path.join(path, str(submission['assignment_id']), str(submission['user_id']))
+        # if 'username' in submission:
+        #     dirname = submission['username']
+        # else:
+            # dirname = str(submission['user_id'])
+        dirname = str(submission['id'])
+
+        self.path = os.path.join(path, str(submission['assignment_id']), dirname)
+        self.delete_on_exit = delete_on_exit
 
     def __enter__(self):
         os.makedirs(self.path)
@@ -21,10 +28,11 @@ class SubmissionDirectory(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        try:
-            shutil.rmtree(self.path)
-        except OSError, e:
-            pass
+        if self.delete_on_exit:
+            try:
+                shutil.rmtree(self.path)
+            except OSError, e:
+                pass
 
 def file_exists(file_path, base_path=None):
     if base_path is not None:
@@ -48,36 +56,59 @@ def make_empty(file_path, base_path=None):
 
     assert not file_exists(file_path)
 
-    return os.makedirs(file_path)
+    os.makedirs(file_path)
 
+    assert os.path.exists(file_path)
 
-def run_process(cmd, cwd):
+    return file_path
+
+def run_process(cmd, cwd, timeout = None):
     try:
-        output = subprocess32.check_output(cmd, cwd=cwd, stderr=subprocess32.STDOUT, shell=True)
+        output = subprocess32.check_output(cmd, cwd=cwd, stderr=subprocess32.STDOUT, shell=True, timeout=timeout)
         success = True
     except subprocess32.CalledProcessError, e:
         output = e.output
         success = False
+    except subprocess32.TimeoutExpired, e:
+        output = 'Timed out.\n' + e.output
+        success = False
 
     return success, output.strip()
 
+def run_process_live(cmd, cwd, timeout = None):
+    try:
+        proc = subprocess32.Popen(cmd, cwd=cwd, shell=True)        
+        try:
+            ret = proc.wait(timeout=timeout)
+            return True        
+        except subprocess32.TimeoutExpired, e:            
+            proc.kill()
+            return False
 
-def mark_process(cmd, cwd, mark_dict, component_mark, success_comment='', failure_comment=''):
+    except subprocess32.CalledProcessError, e:        
+        return False
 
-    success, output = run_process(cmd, cwd)
+
+
+def mark_process(cmd, cwd, mark_dict, component_mark, success_comment='', failure_comment='', timeout=None):
+
+    success, output = run_process(cmd, cwd, timeout=timeout)
+
+    # print success
+    # print output
 
     if success:
         marks.add_component_mark(mark_dict, component_mark, 'Successfully ran "%s". %s' % (cmd, success_comment))
 
     else:
         marks.add_component_mark(mark_dict, 0,
-                                 'Could not run "%s". Output was "%s". %s' % (cmd, output, failure_comment))
+                                 'Could not run "%s"\n. Output was "%s". %s' % (cmd, output, failure_comment))
 
     return success, output
 
 
-def mark_process_output(cmd, cwd, expected_output, mark_dict, component_mark, success_comment='', failure_comment=''):
-    success, output = mark_process(cmd, cwd, mark_dict, 0, success_comment, failure_comment)
+def mark_process_output(cmd, cwd, expected_output, mark_dict, component_mark, success_comment='', failure_comment='', timeout=None):
+    success, output = mark_process(cmd, cwd, mark_dict, 0, success_comment, failure_comment, timeout=timeout)
 
     if success:
 

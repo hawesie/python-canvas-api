@@ -2,6 +2,9 @@ __author__ = 'nah'
 
 from marking import canvas_api, mongodb_store, marking_actions, marks, file_actions, git_actions, java_actions
 import requests
+from marking.mongodb_store import content_decode
+
+
 
 def mark(submission, marker_fn):
     marker = marker_fn()
@@ -47,16 +50,21 @@ def git_file_marker(submission, attachments, marks_dict):
     filename = attachments.keys()[0]
     tokeniser = lambda f: f.split()
 
+    # print attachments
+
     # file_tokens = filter(lambda token: token.startswith('git') or token.startswith('http'), tokeniser(attachments[filename]))
     file_tokens = tokeniser(str(attachments[filename]))
 
     if num_files > 1:
         marks.add_comment(marks_dict, 'More that one file submitted, using only %s' % filename)
 
-    if len(file_tokens) > 2:
+
+
+    if len(file_tokens) > 3:
         file_tokens = file_tokens[0:2]
-        marks.add_comment(marks_dict, 'More than two tokens in submitted file, skipping')
-        return
+        marks.add_comment(marks_dict, 'More than three tokens in submitted file, using first three')
+
+    print file_tokens            
 
     marks.set_part(marks_dict, 'Part 1')
     with file_actions.SubmissionDirectory(submission) as dir:
@@ -94,6 +102,7 @@ def git_file_marker(submission, attachments, marks_dict):
 
                 def mark_file_fn(f, mark_dict):
                     def line_match_fn(l):
+                        l = content_decode(l)
                         return l.lower().startswith('%s:' % submission['username'].lower())
 
                     file_actions.match_file_line(f, get_line_fn, line_match_fn, mark_dict, 0.5)
@@ -116,11 +125,12 @@ def git_file_marker(submission, attachments, marks_dict):
                                                               1,
                                                               expected_output=git_actions.get_last_commit(
                                                                   repo).__str__())
-                if success:
-                    marks.add_component_mark(marks_dict, 0, 'Kudos for successfully completing the extension.')
-                else:
-                    marks.add_component_mark(marks_dict, 0,
-                                             'Well done for attempting the extension, but the output was not correct. Please check "git log" for your last commit hash.')
+                # success is whether program ran, not whether it did the right thing
+                # if success:
+                #         marks.add_component_mark(marks_dict, 0, 'Kudos for successfully completing the extension.')
+                # else:
+                #     marks.add_component_mark(marks_dict, 0,
+                #                              'Well done for attempting the extension, but the output was not correct. Please check "git log" for your last commit hash.')
 
             else:
                 marks.add_component_mark(marks_dict, 0,
@@ -139,56 +149,44 @@ if __name__ == "__main__":
     # courses = capi.get_courses()
     # print_courses(courses)
 
-    sww1 = 10065
+    sww1 = 16318
     course_id = sww1
 
     # assignments = capi.get_assignments(sww1)
     # print_assignments(assignments)
     #
 
-    git_assignment = 26165
-    # assignment_id = 26353
+    git_assignment = 49819
     assignment_id = git_assignment
 
     # get all submissions
-    submissions = capi.get_assignment_submissions(course_id, assignment_id)
+    # submissions = capi.get_assignment_submissions(course_id, assignment_id)
 
-    print('%s submissions retrieved from Canvas' % len(submissions))
+    # print('%s submissions retrieved from Canvas' % len(submissions))
 
-    def add_user(sub):
-        marking_actions.get_username(sub, capi, store)
 
-    # make sure username is available
-    map(add_user, submissions)
+    # def add_user(sub):
+    #     marking_actions.get_username(sub, capi, store)
+
+    # # make sure username is available
+    # map(add_user, submissions)
 
     # store them locally for processing -- may not be necessary, but it allows more complex queries to be made
-    store.store_assignment_submissions(course_id, assignment_id, submissions)
+    # store.store_assignment_submissions(course_id, assignment_id, submissions)
+
+    # get just the assignments that still need marking
+    # submissions = store.get_submissions_to_mark(course_id, assignment_id)    
+
+    # get all assignments
+    submissions = store.get_assignment_submissions(course_id, assignment_id)        
+    submissions = filter(lambda sub: len(sub['username']) > 0, submissions)
 
 
-
-    # the assignments that still need marking
-    # submissions = store.get_submissions_to_mark(course_id, assignment_id)
-
-
-    # submissions = store.get_assignment_submissions(course_id, assignment_id)
-    # submissions = filter(lambda sub: len(sub['username']) == 7, submissions)
-
-
-    test_ids = [67037]
-
-    submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
+    # test_ids = [95534]
+    # submissions = [store.get_stored_submission(course_id, assignment_id, uis) for uis in test_ids]
 
     new_marker_fun = lambda: marking_actions.FileTokenMarker(course_id, capi, store,
                                                              attachments_marker_fn=git_file_marker)
-
-    # capi.grade_assignment_submission(course_id, assignment_id, 68917, 3, "This is a test")
-    
-    # payload = {'access_token': access_token}
-    # payload['submission[posted_grade]'] = 3
-
-    #                                           # /api/v1/courses/:course_id/assignments/:assignment_id/submissions/:user_id
-    # r = requests.put("https://canvas.bham.ac.uk/api/v1/courses/10065/assignments/26165/submissions/68917", params=payload)
-    # print r.json()
 
     print('%s submissions to mark' % len(submissions))
 
@@ -198,9 +196,10 @@ if __name__ == "__main__":
         mark_dict = mark(submission, new_marker_fun)
         store.store_submission_marks(course_id, submission, mark_dict)
         grade, comment = marks.aggregate_marks(mark_dict)
-        # print comment
-        capi.grade_assignment_submission(course_id, assignment_id, submission['user_id'], grade, comment)
+        print comment
+        # capi.grade_assignment_submission(course_id, assignment_id, submission['user_id'], grade, comment)
         count += 1
+        # break
 
     # # for submission in submissions:
     # #     grade, comment = marks.aggregate_marks(submission['marks'])       

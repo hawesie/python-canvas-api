@@ -7,6 +7,40 @@ import marks
 import file_actions
 
 
+def compile_dirs(cwd, marks_dict, component_mark, src_dir='src', bin_dir='bin'):
+    file_actions.make_empty(bin_dir, cwd)
+
+    to_find = '*.java'
+
+    # find filenames which match the required class
+    matches = []
+    for root, dirnames, filenames in os.walk(cwd):
+        for filename in fnmatch.filter(filenames, to_find):
+            
+            full_path = os.path.join(root, filename)        
+            # todo: could be hugely inefficient
+            # if filename != 'SolutionFactory.java' and 'ZoneSequenceTest' in open(full_path).read():
+            #     marks.add_comment(marks_dict, 'Removing file containing ZoneSequenceTest from compilation: %s' % filename)
+            # else:
+    
+            rel_from_root = full_path[len(cwd) + 1:]
+            matches.append(rel_from_root)
+
+    
+    if len(matches) == 0:
+        marks.add_component_mark(marks_dict, 0, 'No java files found in repository')
+        return False, ''
+    else:
+        java_files =  ''
+        for fn in matches:
+            java_files += fn + ' '
+
+        # excuse horrid fixed classpath
+        compile = 'javac -d bin -cp "/Applications/eclipse/plugins/org.junit_4.11.0.v201303080030/junit.jar:/Users/nah/code/lejos/lib/nxt/classes.jar:/Users/nah/code/eclipse-workspace/rp-shared/bin:/Users/nah/code/eclipse-workspace/rp-pc/bin" %s' % java_files
+
+        return file_actions.mark_process(compile, cwd, marks_dict, component_mark), java_files
+
+
 def compile_java_class(class_name, package, cwd, marks_dict, component_mark, src_dir='src', bin_dir='bin'):
     file_actions.make_empty(bin_dir, cwd)
 
@@ -16,7 +50,7 @@ def compile_java_class(class_name, package, cwd, marks_dict, component_mark, src
     matches = []
     for root, dirnames, filenames in os.walk(cwd):
         for filename in fnmatch.filter(filenames, to_find):
-            full_path = os.path.join(root, filename)
+            full_path = os.path.join(root, filename)            
             rel_from_root = full_path[len(cwd) + 1:]
             matches.append(rel_from_root)
 
@@ -39,15 +73,19 @@ def compile_java_class(class_name, package, cwd, marks_dict, component_mark, src
 
 
 def run_java_class(class_name, package, cwd, compiled_file, marks_dict, component_mark, src_dir='src', bin_dir='bin',
-                   expected_output=None):
+                   classpath = None, expected_output=None, timeout=None):
+    
+    if classpath is not None:
+        bin_dir += ':' + classpath
+
     command = 'java -classpath ' + bin_dir + ' ' + package + '.' + class_name
 
     if expected_output is not None:
-        success, output = file_actions.mark_process_output(command, cwd, expected_output, marks_dict, component_mark)
+        success, output = file_actions.mark_process_output(command, cwd, expected_output, marks_dict, component_mark, timeout=timeout)
     else:
-        success, output = file_actions.mark_process(command, cwd, marks_dict, component_mark)
+        success, output = file_actions.mark_process(command, cwd, marks_dict, component_mark, timeout=timeout)
 
-    if not success:
+    if not success and compiled_file is not None:
         # if the specified class failed, try to infer class from compiled file
 
         # strip src prefix
@@ -65,3 +103,16 @@ def run_java_class(class_name, package, cwd, compiled_file, marks_dict, componen
                                                         success_comment='Mismatch between file structure and package structure, hence previous failure.')
 
     return success, output
+
+
+def run_java_class_live(class_name, package, cwd, compiled_file, marks_dict, component_mark, src_dir='src', bin_dir='bin',
+                   classpath = None, expected_output=None, timeout=None):
+    
+    if classpath is not None:
+        bin_dir += ':' + classpath
+
+    command = 'java -classpath ' + bin_dir + ' ' + package + '.' + class_name
+
+    success = file_actions.run_process_live(command, cwd, timeout=timeout)
+
+    return success

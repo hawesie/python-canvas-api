@@ -2,6 +2,7 @@ __author__ = 'nah'
 
 import os
 import threading
+from time import sleep
 
 from git import Repo
 
@@ -11,17 +12,39 @@ lock = threading.Lock()
 def clone_repo(git_url, repo_dir):
     assert os.path.exists(repo_dir)
 
-    try:
-        lock.acquire()
-        # print to_ssh_url(git_url)
-        repo = Repo.clone_from(to_ssh_url(git_url), repo_dir)
-        return repo
-    except Exception, e:
-        # print e
-        return None
-    finally:
-        lock.release()
-        # print 'done ', to_ssh_url(git_url)
+    repo = None 
+
+    tries = 0
+    tries_limit = 5
+    delay_secs = 2
+
+
+    # delayed retries seem to help with occasional network issues
+    while repo is None and tries < tries_limit:
+        try:
+            lock.acquire()
+            tries += 1            
+                            
+            repo = Repo.clone_from(git_url, repo_dir)
+        except Exception, e:
+            print e        
+            sleep(tries * delay_secs)
+
+            # Gitlab doesn't seem to like you leaving off .git
+            if git_url.startswith('http') and not (git_url.endswith('.git') or git_url.endswith('.git/')):
+                git_url += '.git'
+
+        finally:
+            lock.release()
+    return repo
+        
+def clone_repo_at_commit(git_url, branch, commit, repo_dir):
+    repo = clone_repo(git_url, repo_dir)
+    if repo is not None:
+        repo.create_head('branch_for_testing', commit)
+        repo.heads.branch_for_testing.checkout()
+        # print repo
+    return repo
 
 def get_last_commit(repo):
     head = repo.head  # the head points to the active branch/ref

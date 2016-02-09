@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 __author__ = 'nah'
 
 from marking import canvas_api, mongodb_store

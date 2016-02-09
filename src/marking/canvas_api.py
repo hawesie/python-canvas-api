@@ -35,7 +35,22 @@ class CanvasAPI():
         if self.access_token is not None:
             payload['access_token'] =  self.access_token
 
-        r = requests.put(url, params=payload)
+        r = requests.put(url, params=payload)        
+
+        # raises an exception if there was an http error
+        r.raise_for_status()
+        return r
+
+    def post(self, api_url, payload=None):
+        url = self.api_url + api_url
+
+        if payload is None:
+            payload = {}
+
+        if self.access_token is not None:
+            payload['access_token'] =  self.access_token
+
+        r = requests.post(url, data=payload)
 
         # raises an exception if there was an http error
         r.raise_for_status()
@@ -72,16 +87,20 @@ class CanvasAPI():
 
         return responses
 
-    def get(self, api, to_json=True, payload=None):
+    def get(self, api, to_json=True, payload=None, single=False):
 
         responses = self.get_responses(api, payload=payload)
         if to_json:
             responses = [r.json() for r in responses]
-
-        return list(reduce(lambda x, y: itertools.chain(x, y), responses))
+        
+        if single:
+            # print responses
+            return responses[0]
+        else:
+            return list(reduce(lambda x, y: itertools.chain(x, y), responses))
 
     def get_user(self, user_id):
-        return self.get('/users/%s/profile' % user_id)
+        return self.get('/users/%s/profile' % user_id, single=True)
 
     def get_course_groups(self, course_id):
         return self.get('/courses/%s/groups' % course_id)
@@ -114,11 +133,17 @@ class CanvasAPI():
 
     def grade_assignment_submission(self, course_id, assignment_id, user_id, grade, comment=None):
         
-        payload = {'submission[posted_grade]': grade}
+        payload = {'grade_data[%s][posted_grade]' % user_id: grade}
         if comment is not None:
-            payload['comment[text_comment]'] = comment
+            payload['grade_data[%s][text_comment]' % user_id] = comment
 
-        return self.put('/courses/%s/assignments/%s/submissions/%s' % (course_id, assignment_id, user_id), payload=payload)            
+        return self.post('/courses/%s/assignments/%s/submissions/update_grades' % (course_id, assignment_id), payload=payload)            
+
+    def comment_assignment_submission(self, course_id, assignment_id, user_id, comment):
+        
+        payload = {'grade_data[%s][text_comment]' % user_id: comment}
+
+        return self.post('/courses/%s/assignments/%s/submissions/update_grades' % (course_id, assignment_id), payload=payload)            
 
     def set_group_name(self, group_id, name):
 
