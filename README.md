@@ -1,6 +1,14 @@
 
 This repository contains code for working with the Canvas v1 API and doing various teaching and marking related tasks. 
 
+It does the following: (not all documented yet!)
+
+ * Retrieves user details from Canvas and stores them locally
+ * Reads and writes group memberships 
+ * Retrieves, stores and exports submissions and attachments
+ * Retrieves, stores and exports quiz results 
+ * Provides functions for the automatic marking for a range of processes, including: Git checkouts, Java compilation, and Java execution. 
+
 **WARNING**: This code is all still very much preliminary, probably quite buggy, and it's usefulness for different tasks will vary.
 
 # Installation
