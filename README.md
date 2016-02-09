@@ -112,4 +112,12 @@ https://canvas.bham.ac.uk/api/v1/courses/16318/assignments/51032/submissions
 ...
 ```
 
-In this case the submissions and attachments are downloaded to the database, then the attachments are read back out and 
+In this case the submissions and attachments are downloaded to the database, then the attachments are read back out and written to disk under the (configurable) output directory.
+
+## Marking Attachments
+
+There are a number of different ways of marking attachments. The script file `unzip_and_compile_java.py` shows how to extract Java files from a zip file and then compile them. Running them afterwards is also possible.
+
+# Marking Outside of Python
+
+If you want to mark a submission outside of the Python framework, you can simply write marks to the database and upload them later.  The script `upload_marks.py` takes the output of previous marking runs, both by the Python scripts (looking for the `marks` key in the submission document) and by external scripts (looking for `auto_comments` and `auto_mark` in the submission document) and uploads the joint result to Canvas. You probably have different requirements for storage, presentation etc., but you can use this for a guide.

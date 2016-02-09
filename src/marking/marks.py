@@ -12,6 +12,9 @@ def set_part(mark_dict, part):
 
     mark_dict['current_part'] = part
 
+    if 'parts' not in mark_dict:
+        mark_dict['parts'] = {}
+
     mark_dict['parts'][part] = {}
 
 

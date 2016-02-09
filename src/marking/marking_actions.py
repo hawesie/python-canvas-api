@@ -59,6 +59,11 @@ class Marker(object):
         self.canvas_api = canvas_api
         self.submission_store = submission_store
 
+    def create_mark_dict(self, submission):
+        mark_dict = {}
+        mark_dict['username'] = submission['username']
+        mark_dict['user_id'] = submission['user_id']
+        return mark_dict
 
     def get_username(self, submission):
         return get_username(submission, self.canvas_api, self.submission_store)
@@ -141,9 +146,7 @@ class FileTokenMarker(Marker):
         
         # print('marking %s, %s' % (submission['username'], submission['user_id']))
 
-        mark_dict = {}
-        mark_dict['username'] = submission['username']
-        mark_dict['user_id'] = submission['user_id']
+        mark_dict = self.create_mark_dict(submission)
 
         if attachments is not None:
             self.attachments_marker_fn(submission, attachments, mark_dict)
