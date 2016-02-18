@@ -97,6 +97,7 @@ class CanvasAPI():
             # print responses
             return responses[0]
         else:
+            # print responses
             return list(reduce(lambda x, y: itertools.chain(x, y), responses))
 
     def get_user(self, user_id):
@@ -121,14 +122,15 @@ class CanvasAPI():
     def get_quiz_submissions(self, course_id, quiz_id):
         return self.get('/courses/%s/quizzes/%s/submissions' % (course_id, quiz_id))
 
-    def get_assignment_submissions(self, course_id, assignment_id):
+    def get_assignment_submissions(self, course_id, assignment_id, grouped=False):
         """
         Only returns those submissions that have actually been submitted, rather than potential submissions.
         :param course_id:
         :param assignment_id:
         :return:
         """
-        submissions = self.get('/courses/%s/assignments/%s/submissions' % (course_id, assignment_id))        
+        payload = {'grouped': grouped}
+        submissions = self.get('/courses/%s/assignments/%s/submissions' % (course_id, assignment_id), payload=payload)        
         return filter(lambda sub: sub['workflow_state'] != 'unsubmitted', submissions)
 
     def grade_assignment_submission(self, course_id, assignment_id, user_id, grade, comment=None):
@@ -168,11 +170,12 @@ class CanvasAPI():
         """
         attachments = {}
 
-        for attachment in submission['attachments']:
-            r = requests.get(attachment['url'], params={'access_token': self.access_token})
-            if as_bytes:
-                attachments[attachment['filename']] = r.content
-            else:
-                attachments[attachment['filename']] = r.text
+        if 'attachments' in submission:
+            for attachment in submission['attachments']:
+                r = requests.get(attachment['url'], params={'access_token': self.access_token})
+                if as_bytes:
+                    attachments[attachment['filename']] = r.content
+                else:
+                    attachments[attachment['filename']] = r.text
         return attachments
 

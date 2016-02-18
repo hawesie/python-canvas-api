@@ -35,8 +35,8 @@ if __name__ == "__main__":
     course_id = 15668
     assignment_id = 50340
 
-    # # get all submissions from Canvas
-    # submissions = capi.get_assignment_submissions(course_id, assignment_id)
+    # get all submissions from Canvas
+    submissions = capi.get_assignment_submissions(course_id, assignment_id)
 
     # print('%s submissions retrieved from Canvas' % len(submissions))
 

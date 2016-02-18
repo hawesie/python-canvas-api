@@ -24,17 +24,21 @@ class SubmissionStore():
         self.users_collection = self.client['users']['users']
         self.users_collection.ensure_index('user_id')
 
-    def _store_single_submission(self, collection, submission):
+    def _store_single_submission(self, collection, submission, uid = None, key= None):
         # assumption is that there can only be one submission per user in the collection
 
-        if 'user_id' in submission:
-            query = {'user_id': submission['user_id']}
-        elif 'id' in submission:
-            query = {'id': submission['id']}
-        elif 'username' in submission:
-            query = {'username': submission['username']}
+        if uid is None or key is None:
+            if 'user_id' in submission:
+                query = {'user_id': submission['user_id']}
+            elif 'id' in submission:
+                query = {'id': submission['id']}
+            elif 'username' in submission:
+                query = {'username': submission['username']}
+            else:
+                query = {'sis_user_id': submission['sis_user_id']}
         else:
-            query = {'sis_user_id': submission['sis_user_id']}
+            query = {key: uid}
+            submission[key] = uid
 
         collection.update(query, submission, upsert=True)
 
@@ -51,7 +55,7 @@ class SubmissionStore():
         assignment_id = str(assignment_id)
         return self.client[course_id][assignment_id]
 
-    def store_assignment_submissions(self, course_id, assignment_id, submissions):
+    def store_assignment_submissions(self, course_id, assignment_id, submissions, group_category_id = None):
         """
         Stores the given submissions in the database.
 
@@ -64,7 +68,16 @@ class SubmissionStore():
         try:
             for submission in submissions:
                 submission['assignment_id'] = assignment_id
-                self._store_single_submission(submissions_collection, submission)
+
+                if not group_category_id is None:                    
+                    storage_id = self.get_group_from_category(course_id, group_category_id, submission['user_id'], key='user_id')
+                    storage_key = 'group'
+                    # print 'grouping %s for %s' % (storage_id, submission['user_id'])
+                else:
+                    storage_id = submission['user_id']
+                    storage_key = 'user_id'
+
+                self._store_single_submission(submissions_collection, submission, key=storage_key, uid=storage_id)
         except TypeError, te:
             self._store_single_submission(submissions_collection, submissions)
 
@@ -199,9 +212,9 @@ class SubmissionStore():
 
     def get_group_from_category(self, course_id, group_category_id, uid, key='id'):
         course_id = str(course_id)
-        group_category = 'group_' + str(group_category_id)
-        for group in self.client[course_id][group_category].find():            
-            for member in group['members']:                
+        group_category = 'group_' + str(group_category_id)        
+        for group in self.client[course_id][group_category].find():                        
+            for member in group['members']:                                
                 if member[key] == uid:
                     return group['name']
 

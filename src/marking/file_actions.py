@@ -2,7 +2,7 @@ __author__ = 'nah'
 
 import os
 import shutil
-
+import fnmatch
 import subprocess32
 
 import marks
@@ -11,15 +11,15 @@ import marks
 class SubmissionDirectory(object):
     """Directory to work in"""
 
-    def __init__(self, submission, path='/tmp', delete_on_exit=True):
+    def __init__(self, submission, path='/tmp', delete_on_exit=True, user_key='id'):
         """Constructor for SubmissionDirectory"""
         # if 'username' in submission:
         #     dirname = submission['username']
         # else:
             # dirname = str(submission['user_id'])
-        dirname = str(submission['id'])
+        self.dirname = str(submission[user_key])
 
-        self.path = os.path.join(path, str(submission['assignment_id']), dirname)
+        self.path = os.path.join(path, str(submission['assignment_id']), self.dirname)
         self.delete_on_exit = delete_on_exit
 
     def __enter__(self):
@@ -33,6 +33,20 @@ class SubmissionDirectory(object):
                 shutil.rmtree(self.path)
             except OSError, e:
                 pass
+
+def find_files_matching(cwd, to_find):
+    to_find = '*.java'
+
+    # find filenames which match the required format
+    matches = []
+    for root, dirnames, filenames in os.walk(cwd):
+        for filename in fnmatch.filter(filenames, to_find):            
+            full_path = os.path.join(root, filename)                    
+            rel_from_root = full_path[len(cwd) + 1:]
+            matches.append(rel_from_root)
+
+    return matches
+
 
 def file_exists(file_path, base_path=None):
     if base_path is not None:
@@ -158,4 +172,12 @@ def match_file_line(f, get_line_fn, line_match_fn, mark_dict, component_mark, pa
 
         marks.add_component_mark(mark_dict, component_mark, comment)
 
+
+def build_moss_command(submission_file_lists, lang='java'):
+    cmd = 'moss -l %s -d ' % lang
+
+    for file_list in submission_file_lists:
+        cmd += ' '.join(file_list) + ' '
+
+    return cmd
 
