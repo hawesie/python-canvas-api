@@ -24,7 +24,7 @@ class SubmissionStore():
         self.users_collection = self.client['users']['users']
         self.users_collection.ensure_index('user_id')
 
-    def _store_single_submission(self, collection, submission, uid = None, key= None):
+    def _store_single_submission(self, collection, submission, uid = None, key= None, remove_attachments = False):
         # assumption is that there can only be one submission per user in the collection
 
         if uid is None or key is None:
@@ -40,7 +40,10 @@ class SubmissionStore():
             query = {key: uid}
             submission[key] = uid
 
-        collection.update(query, submission, upsert=True)
+        collection.update(query, {'$set': submission}, upsert=True)
+
+        if remove_attachments:
+            collection.update(query, {'$unset': {'attachment-files':''}})
 
 
     def get_assignment_collection(self, course_id, assignment_id):
@@ -55,7 +58,7 @@ class SubmissionStore():
         assignment_id = str(assignment_id)
         return self.client[course_id][assignment_id]
 
-    def store_assignment_submissions(self, course_id, assignment_id, submissions, group_category_id = None):
+    def store_assignment_submissions(self, course_id, assignment_id, submissions, group_category_id = None, remove_attachments = False):
         """
         Stores the given submissions in the database.
 
@@ -77,9 +80,9 @@ class SubmissionStore():
                     storage_id = submission['user_id']
                     storage_key = 'user_id'
 
-                self._store_single_submission(submissions_collection, submission, key=storage_key, uid=storage_id)
+                self._store_single_submission(submissions_collection, submission, key=storage_key, uid=storage_id, remove_attachments=remove_attachments)
         except TypeError, te:
-            self._store_single_submission(submissions_collection, submissions)
+            self._store_single_submission(submissions_collection, submissions, remove_attachments=remove_attachments)
 
  
 

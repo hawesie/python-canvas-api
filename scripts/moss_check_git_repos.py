@@ -50,8 +50,10 @@ if __name__ == "__main__":
     course_id = args.course_id[0]
     assignment_id = args.assignment_id[0]
     output_dir = args.output_dir
-    group = args.group[0]
+    group = None if args.group is None else args.group[0]
     
+
+
     # get all submissions from Canvas
     submissions = capi.get_assignment_submissions(course_id, assignment_id)
 
@@ -103,7 +105,7 @@ if __name__ == "__main__":
             assert num_files > 0
 
             filename = attachments.keys()[0]
-            tokeniser = lambda f: f.split()
+            tokeniser = lambda f: map(content_decode, f.split())
 
             # print attachments
 

@@ -10,7 +10,7 @@ import file_actions
 
 
 
-def compile_dirs(cwd, marks_dict, component_mark, src_dir='src', bin_dir='bin', classpath=''):
+def compile_dirs(cwd, marks_dict, component_mark, bin_dir='bin', classpath=''):
     file_actions.make_empty(bin_dir, cwd)
 
     to_find = '*.java'
@@ -38,7 +38,7 @@ def compile_dirs(cwd, marks_dict, component_mark, src_dir='src', bin_dir='bin', 
         for fn in matches:
             java_files += fn + ' '
 
-        compile = 'javac -d bin -cp "%s" %s' % (classpath, java_files)
+        compile = 'javac -d %s -cp "%s" %s' % (bin_dir, classpath, java_files)
         # compile = 'javac -d bin -cp "/Applications/eclipse/plugins/org.junit_4.11.0.v201303080030/junit.jar:/Users/nah/code/lejos/lib/nxt/classes.jar:/Users/nah/code/eclipse-workspace/rp-shared/bin:/Users/nah/code/eclipse-workspace/rp-pc/bin" %s' % java_files
 
         compiled, output = file_actions.mark_process(compile, cwd, marks_dict, component_mark)
@@ -71,7 +71,7 @@ def compile_java_class(class_name, package, cwd, marks_dict, component_mark, src
                                      'Incorrect file structure. I was expecting your code to be layed out as ./%s but yours was ./%s' % (
                                      expected_file_path, java_file))
 
-        compile = 'javac -d bin %s' % java_file
+        compile = 'javac -d %s %s' % (bin_dir, java_file)
 
         return file_actions.mark_process(compile, cwd, marks_dict, component_mark), java_file
 

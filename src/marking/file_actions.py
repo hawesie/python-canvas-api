@@ -84,6 +84,7 @@ def run_process(cmd, cwd, timeout = None):
         output = e.output
         success = False
     except subprocess32.TimeoutExpired, e:
+        print 'TIMED OUT'
         output = 'Timed out.\n' + e.output
         success = False
 
@@ -95,7 +96,8 @@ def run_process_live(cmd, cwd, timeout = None):
         try:
             ret = proc.wait(timeout=timeout)
             return True        
-        except subprocess32.TimeoutExpired, e:            
+        except subprocess32.TimeoutExpired, e:      
+            print 'TIMED OUT'
             proc.kill()
             return False
 
