@@ -39,7 +39,7 @@ class SubmissionStore():
         else:
             query = {key: uid}
             submission[key] = uid
-
+            
         collection.update(query, {'$set': submission}, upsert=True)
 
         if remove_attachments:
@@ -196,7 +196,9 @@ class SubmissionStore():
             group['members'] = members
 
         query = {'id': group['id']}
-        self.client[course_id][group_category].update(query, group, upsert=True)
+        self.client[course_id][group_category].update(query, {'$set': group}, upsert=True)
+
+
 
     def get_course_groups(self, course_id, group_category_id, query={}):
         course_id = str(course_id)
@@ -211,6 +213,11 @@ class SubmissionStore():
     def get_group_members(self, course_id, group_category_id, group_name):
         group = self.get_group(course_id, group_category_id, group_name)
         return [member['user_id'] for member in group['members']]
+
+    def get_groups_from_category(self, course_id, group_category_id):
+        course_id = str(course_id)
+        group_category = 'group_' + str(group_category_id)        
+        return self.client[course_id][group_category].find()
 
 
     def get_group_from_category(self, course_id, group_category_id, uid, key='id'):

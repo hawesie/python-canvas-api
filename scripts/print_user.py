@@ -4,6 +4,8 @@
 from marking import canvas_api, mongodb_store
 import argparse
 
+
+
 if __name__ == "__main__":
 
     store = mongodb_store.SubmissionStore()

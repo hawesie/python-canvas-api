@@ -39,12 +39,15 @@ def clone_repo(git_url, repo_dir):
     return repo
         
 def clone_repo_at_commit(git_url, branch, commit, repo_dir):
-    repo = clone_repo(git_url, repo_dir)
-    if repo is not None:
-        repo.create_head('branch_for_testing', commit)
-        repo.heads.branch_for_testing.checkout()
-        # print repo
-    return repo
+    try:
+        repo = clone_repo(git_url, repo_dir)
+        if repo is not None:
+            repo.create_head('branch_for_testing', commit)
+            repo.heads.branch_for_testing.checkout()
+            print git_url, commit
+        return repo
+    except Exception, e:
+        return None
 
 def get_last_commit(repo):
     head = repo.head  # the head points to the active branch/ref

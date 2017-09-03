@@ -77,7 +77,7 @@ class CanvasAPI():
         responses = []
         while True:
 
-            r = self.get_response(url)
+            r = self.get_response(url, payload=payload)
             responses.append(r)
 
             if 'next' in r.links:
@@ -106,6 +106,9 @@ class CanvasAPI():
     def get_course_groups(self, course_id):
         return self.get('/courses/%s/groups' % course_id)
 
+    def get_groups_in_category(self, group_category_id):
+        return self.get('/group_categories/%s/groups' % group_category_id)
+
     def get_group_membership(self, group_id):
         return self.get('/groups/%s/memberships' % group_id)
 
@@ -132,6 +135,11 @@ class CanvasAPI():
         payload = {'grouped': grouped}
         submissions = self.get('/courses/%s/assignments/%s/submissions' % (course_id, assignment_id), payload=payload)        
         return filter(lambda sub: sub['workflow_state'] != 'unsubmitted', submissions)
+
+    def get_unasssigned_users_in_group_category(self, group_category_id):
+        payload = {'unassigned': True}                
+        return self.get('/group_categories/%s/users' % group_category_id, payload=payload)                        
+
 
     def grade_assignment_submission(self, course_id, assignment_id, user_id, grade, comment=None):
         

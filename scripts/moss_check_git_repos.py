@@ -149,7 +149,7 @@ if __name__ == "__main__":
     cwd = os.path.join(output_dir, str(assignment_id))
     moss_cmd = file_actions.build_moss_command(submission_files, lang='java')
 
-    print 'Calling moss...'
+    print 'Calling moss_cmd...'
     success, output = file_actions.run_process(moss_cmd, cwd)
 
     if success:
